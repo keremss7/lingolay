@@ -35,7 +35,7 @@ jobs:
       - name: Zip
         shell: pwsh
         run: Compress-Archive -Path dist/Lingolay/* -DestinationPath "Lingolay-${{ github.ref_name }}-windows-x64.zip"
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: Lingolay-*-windows-x64.zip
