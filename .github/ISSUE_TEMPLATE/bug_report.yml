@@ -1,0 +1,38 @@
+name: 🐛 Bug report
+description: Something doesn't work as expected
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report a bug! Please search existing issues first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: Game / app / website you were translating
+      placeholder: e.g. Elden Ring (borderless), Netflix in Chrome, YouTube
+  - type: input
+    id: langs
+    attributes:
+      label: Language pair and engine
+      placeholder: e.g. Japanese → English, NLLB Fast
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: In the app open **Diagnostics / Help → Copy** and paste it here.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines (optional)
+      description: The log folder can be opened from the Diagnostics window.
+      render: text

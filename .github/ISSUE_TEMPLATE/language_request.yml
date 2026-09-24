@@ -1,0 +1,27 @@
+name: 🌍 Language request
+description: Ask for a new translation language, dubbing voice or UI translation
+labels: ["language", "good first issue"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What do you need?
+      options:
+        - New on-screen / target language
+        - Dubbing voice for a language
+        - Interface (UI) translation
+    validations:
+      required: true
+  - type: input
+    id: lang
+    attributes:
+      label: Language
+      placeholder: e.g. Vietnamese (vi)
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I can provide or review the translation
