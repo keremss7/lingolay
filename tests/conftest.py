@@ -14,4 +14,11 @@ import pytest  # noqa: E402
 @pytest.fixture(scope='session')
 def qapp():
     from PySide6.QtWidgets import QApplication
-    return QApplication.instance() or QApplication([])
+    app = QApplication.instance() or QApplication([])
+    yield app
+    # Tear down Qt objects deterministically; letting the interpreter destroy them at exit
+    # can crash on Windows after all tests have passed.
+    for widget in QApplication.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
