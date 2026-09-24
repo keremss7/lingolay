@@ -63,12 +63,15 @@ def _run_cli(argv):
     import argparse
     parser = argparse.ArgumentParser(prog='lingolay', description=f'{__app_name__} — real-time offline screen translator')
     parser.add_argument('--version', action='store_true', help='print version and exit')
+    parser.add_argument('--selftest', action='store_true', help='check that all components load (used by CI on the packaged app)')
     parser.add_argument('--list-models', action='store_true', help='list downloadable models/voices and their status')
     parser.add_argument('--download', nargs='+', metavar='MODEL', help='download models: fast, quality, voice:<lang> (e.g. voice:tr)')
     args, _qt_args = parser.parse_known_args(argv)
     if args.version:
         _print(f'{__app_name__} {__version__}')
         return 0
+    if args.selftest:
+        return _selftest()
     if not (args.list_models or args.download):
         return None
 
@@ -109,6 +112,81 @@ def _run_cli(argv):
             _print(f'  ✗ failed: {e}')
             exit_code = 1
     return exit_code
+
+
+def _selftest():
+    """Import every component and report availability. Exit 1 if a required one is missing."""
+    import os
+    os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+    results = []
+
+    def check(name, fn, required=True):
+        try:
+            ok, detail = fn()
+        except Exception as e:  # pragma: no cover - diagnostic path
+            ok, detail = False, f'{type(e).__name__}: {e}'
+        results.append((name, ok, required, detail))
+
+    def gui():
+        from PySide6.QtWidgets import QApplication
+        app = QApplication.instance() or QApplication([])
+        from lingolay.ui.main_window import MainWindow
+        w = MainWindow()
+        w._hotkeys.stop()
+        w.close()
+        app.processEvents()
+        return True, 'main window built'
+
+    def ct2():
+        from lingolay.translation import nllb
+        return nllb.CT2_AVAILABLE and nllb.TOKENIZERS_AVAILABLE, nllb.CT2_IMPORT_ERROR or nllb.TOKENIZERS_IMPORT_ERROR or 'ok'
+
+    def win_ocr():
+        from lingolay.ocr.windows_ocr import WINDOWS_OCR_AVAILABLE, WINDOWS_OCR_IMPORT_ERROR, WindowsOCR
+        if not WINDOWS_OCR_AVAILABLE:
+            return False, WINDOWS_OCR_IMPORT_ERROR
+        import numpy as np
+        engine = WindowsOCR('en-US')
+        engine.recognize(np.full((40, 200, 3), 255, dtype=np.uint8))
+        return engine.is_available(), 'engine created'
+
+    def capture():
+        from lingolay.capture import screen
+        return screen._DXCAM_AVAILABLE or screen._MSS_AVAILABLE, f'dxcam={screen._DXCAM_AVAILABLE} mss={screen._MSS_AVAILABLE}'
+
+    def tts():
+        from lingolay.tts import fast_dubbing, piper_engine
+        return piper_engine.PIPER_AVAILABLE and fast_dubbing.PYGAME_AVAILABLE, piper_engine.PIPER_IMPORT_ERROR or 'ok'
+
+    def ducking():
+        from lingolay.tts import ducking as d
+        return d.PYCAW_AVAILABLE, d.PYCAW_IMPORT_ERROR or 'ok'
+
+    def locales():
+        from lingolay.i18n import available_languages
+        langs = available_languages()
+        return 'tr' in langs, ', '.join(langs)
+
+    check('GUI (PySide6)', gui)
+    check('CTranslate2 + tokenizers', ct2)
+    check('Screen capture', capture)
+    check('Locales', locales)
+    check('Windows OCR', win_ocr, required=sys.platform == 'win32')
+    check('Audio ducking (pycaw)', ducking, required=False)
+    check('Dubbing (piper + pygame)', tts, required=False)
+    failed = False
+    lines = []
+    for name, ok, required, detail in results:
+        lines.append(f"{'OK  ' if ok else ('FAIL' if required else 'WARN')}  {name:<28} {detail}")
+        failed |= required and not ok
+    report = '\n'.join(lines)
+    _print(report)
+    # Windowed builds have no stdout — optionally write the report to a file
+    report_path = os.environ.get('LINGOLAY_SELFTEST_REPORT')
+    if report_path:
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write(report + '\n')
+    return 1 if failed else 0
 
 
 def main(argv=None):
