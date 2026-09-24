@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lingolay"
+version = "2.0.0"
+description = "Real-time, offline screen translator for games & videos — OCR + NLLB-200 + subtitle overlay + neural voice dubbing."
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "keremss7" }]
+requires-python = ">=3.10"
+keywords = [
+    "translation", "screen-translator", "ocr", "subtitles", "overlay", "game-translator",
+    "nllb", "ctranslate2", "offline", "tts", "piper", "dubbing", "pyside6", "accessibility",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Natural Language :: English",
+    "Natural Language :: Turkish",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Games/Entertainment",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "PySide6>=6.6",
+    "numpy>=1.26",
+    "opencv-python>=4.9",
+    "mss>=9.0",
+    "ctranslate2>=4.0",
+    "tokenizers>=0.19",
+    "certifi>=2024.2.2",
+    # Windows: fast capture (Desktop Duplication), built-in OCR, audio ducking
+    "dxcam>=0.0.5; sys_platform == 'win32'",
+    "comtypes>=1.2; sys_platform == 'win32'",
+    "pycaw>=20240210; sys_platform == 'win32'",
+    "winrt-runtime>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Media.Ocr>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Graphics.Imaging>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Globalization>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation.Collections>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Storage.Streams>=2.0; sys_platform == 'win32'",
+    # Non-Windows OCR fallback (requires the Tesseract binary)
+    "pytesseract>=0.3.10; sys_platform != 'win32'",
+]
+
+[project.optional-dependencies]
+tts = ["piper-tts>=1.3", "pygame>=2.5"]
+deepl = ["deepl>=1.18"]
+all = ["lingolay[tts,deepl]"]
+dev = ["lingolay[all]", "pytest>=8", "pytest-qt>=4.4", "ruff>=0.6", "pyinstaller>=6.6"]
+
+[project.urls]
+Homepage = "https://github.com/keremss7/lingolay"
+Issues = "https://github.com/keremss7/lingolay/issues"
+Changelog = "https://github.com/keremss7/lingolay/blob/main/CHANGELOG.md"
+
+[project.scripts]
+lingolay = "lingolay.app:main"
+
+[project.gui-scripts]
+lingolay-gui = "lingolay.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lingolay = ["i18n/locales/*.json", "assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 150
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B008", "UP031", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/lingolay/text/*" = ["E741"]
