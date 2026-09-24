@@ -27,6 +27,11 @@ jobs:
         run: |
           $p = Start-Process -FilePath dist/Lingolay/Lingolay.exe -ArgumentList "--version" -PassThru -Wait -NoNewWindow
           if ($p.ExitCode -ne 0) { exit 1 }
+          # Windowed exe has no console, so the self-test report is written to a file
+          $env:LINGOLAY_SELFTEST_REPORT = "$PWD/selftest.txt"
+          $p = Start-Process -FilePath dist/Lingolay/Lingolay.exe -ArgumentList "--selftest" -PassThru -Wait -NoNewWindow
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { exit 1 }
       - name: Zip
         shell: pwsh
         run: Compress-Archive -Path dist/Lingolay/* -DestinationPath "Lingolay-${{ github.ref_name }}-windows-x64.zip"
