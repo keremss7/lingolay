@@ -40,10 +40,26 @@ def available_languages():
 def detect_system_language():
     try:
         from PySide6.QtCore import QLocale
-        code = QLocale.system().name().split('_')[0].lower()
+        name = QLocale.system().name()  # e.g. 'pt_BR'
     except Exception:
-        code = DEFAULT_LANGUAGE
-    return code if code in available_languages() else DEFAULT_LANGUAGE
+        return DEFAULT_LANGUAGE
+    return match_language(name)
+
+
+def match_language(name):
+    """Pick a locale file for a system locale name: 'pt_BR' → 'pt-BR', else 'pt', else English."""
+    langs = available_languages()
+    parts = name.replace('-', '_').split('_')
+    base = parts[0].lower()
+    if len(parts) > 1:
+        regional = f'{base}-{parts[1].upper()}'
+        if regional in langs:
+            return regional
+    if base in langs:
+        return base
+    # 'pt_PT' with only pt-BR.json available: a regional variant beats English
+    variants = sorted(c for c in langs if c.split('-')[0].lower() == base)
+    return variants[0] if variants else DEFAULT_LANGUAGE
 
 
 def set_language(code):
