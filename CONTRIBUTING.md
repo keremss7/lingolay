@@ -34,7 +34,7 @@ Tip: set `LINGOLAY_HOME=/some/tmp/dir` to keep your development settings and mod
 
 ## 🌐 Translate the interface
 
-1. Copy `src/lingolay/i18n/locales/tr.json` to `src/lingolay/i18n/locales/<code>.json` (e.g. `de.json`).
+1. Copy `src/lingolay/i18n/locales/tr.json` to `src/lingolay/i18n/locales/<code>.json` (e.g. `de.json`, or `pt-BR.json` for a regional variant).
 2. Set `"_meta.name"` to the language's own name (e.g. `"Deutsch"`).
 3. Translate every value. **Keep `{placeholders}` exactly as they are** — the test suite checks this.
 4. Run `pytest tests/test_languages_and_models.py` and open a PR. The new language appears automatically under *Appearance → Interface*.

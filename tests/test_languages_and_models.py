@@ -47,3 +47,13 @@ def test_locale_files_are_valid_and_keep_placeholders():
                 continue
             assert dst, f'{path.name}: empty translation for {src!r}'
             assert _placeholders(src) == _placeholders(dst), f'{path.name}: placeholder mismatch in {src!r}'
+
+
+def test_system_locale_matches_regional_locale_files(monkeypatch):
+    import lingolay.i18n as i18n
+    langs = {'en': 'English', 'tr': 'Türkçe', 'pt-BR': 'Português (Brasil)'}
+    monkeypatch.setattr(i18n, 'available_languages', lambda: langs)
+    assert i18n.match_language('pt_BR') == 'pt-BR'
+    assert i18n.match_language('pt_PT') == 'pt-BR'
+    assert i18n.match_language('tr_TR') == 'tr'
+    assert i18n.match_language('de_DE') == 'en'
