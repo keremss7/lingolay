@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lingolay"
-version = "2.0.0"
+version = "2.1.0"
 description = "Real-time, offline screen translator for games & videos — OCR + NLLB-200 + subtitle overlay + neural voice dubbing."
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }

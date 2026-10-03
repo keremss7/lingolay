@@ -1,3 +1,5 @@
+**What's new:** see the [changelog](https://github.com/keremss7/lingolay/blob/main/CHANGELOG.md).
+
 ## Download
 
 **Windows 10/11 (64-bit):** download `Lingolay-…-windows-x64.zip` below, extract it anywhere and run `Lingolay.exe`.
