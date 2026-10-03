@@ -356,7 +356,7 @@ class InfoBox(QLabel):
 def _field_label(text, width=96):
     lbl = QLabel(text)
     lbl.setStyleSheet(f'color: {TEXT2};')
-    lbl.setFixedWidth(width)
+    lbl.setMinimumWidth(width)  # grows for longer translations instead of clipping
     return lbl
 
 
@@ -613,7 +613,7 @@ class MainWindow(QMainWindow):
         prof_row.addWidget(self._combo_prof, 1)
         self._btn_del_prof = QPushButton(t('Delete'))
         self._btn_del_prof.setObjectName('btn_del')
-        self._btn_del_prof.setFixedWidth(72)
+        self._btn_del_prof.setMinimumWidth(72)
         self._btn_del_prof.setEnabled(False)
         prof_row.addWidget(self._btn_del_prof)
         card.add_row(prof_row)
@@ -625,7 +625,7 @@ class MainWindow(QMainWindow):
         self._btn_save_prof = QPushButton(t('Save'))
         self._btn_save_prof.setObjectName('btn_save')
         self._btn_save_prof.setEnabled(False)
-        self._btn_save_prof.setFixedWidth(86)
+        self._btn_save_prof.setMinimumWidth(86)
         self._btn_save_prof.setMinimumHeight(36)
         self._edit_prof_name.textChanged.connect(self._update_save_prof_btn)
         save_row.addWidget(self._edit_prof_name)

@@ -9,7 +9,7 @@
 Lingolay ekrandaki altyazıyı okur, Meta'nın NLLB‑200 yapay zekâ modeliyle *kendi bilgisayarında* çevirir,<br>
 çeviriyi ekranın üstünde yüzen bir pencerede gösterir — istersen **doğal bir sesle dublaj** da yapar.
 
-[**⬇ Windows için indir**](https://github.com/keremss7/lingolay/releases/latest) · [🇬🇧 English](../README.md)
+[**⬇ Windows için indir**](https://github.com/keremss7/lingolay/releases/latest) · [🇬🇧 English](../README.md) · [🇷🇺 Русский](README.ru.md)
 
 <img src="images/tr/demo.png" alt="Lingolay gerçek zamanlı çeviri" width="820">
 
