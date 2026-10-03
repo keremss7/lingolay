@@ -100,7 +100,8 @@ def boost_wav(wav_bytes, boost, target_rate, target_channels):
         return wav_bytes
 
 
-def concat_wavs(wav_list):
+def concat_wavs(wav_list, gap_ms=0):
+    """Join WAV clips; gap_ms inserts that much silence between them."""
     wav_list = [w for w in wav_list if w]
     if not wav_list:
         return b''
@@ -122,12 +123,13 @@ def concat_wavs(wav_list):
             return wav_list[0]
 
         ch, sw, rate = params
+        gap = b'\x00' * (int(rate * gap_ms / 1000) * ch * sw)
         buf = io.BytesIO()
         with wave.open(buf, 'wb') as wf:
             wf.setnchannels(ch)
             wf.setsampwidth(sw)
             wf.setframerate(rate)
-            wf.writeframes(b''.join(pcm_parts))
+            wf.writeframes(gap.join(pcm_parts))
         return buf.getvalue()
     except Exception as e:
         logger.debug('[TTS] WAV concatenation failed (%s)', e)

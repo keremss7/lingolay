@@ -31,6 +31,13 @@ _DEBOUNCE_SEC = 0.18
 _SENTENCE_END = {'.', '!', '?', '…'}
 _MAX_SEG_LEN = 200
 
+# Natural flow mode: finish the current line instead of cutting it off, catch up by speaking faster
+_SMOOTH_MAX_UTTERANCE_AGE = 6.0   # an utterance may now wait behind the one playing
+_SENTENCE_PAUSE_MS = 180          # silence between sentences of one utterance
+_CATCHUP_STEP_PCT = 20            # extra speed per utterance waiting ahead
+_CATCHUP_MAX_PCT = 40
+_REPEAT_WINDOW_SEC = 6.0
+
 # Speed key from the settings → Piper speech rate (edge-tts style percentage)
 SPEED_RATES = {'normal': '+0%', 'fast': '+35%', 'very_fast': '+60%'}
 SPEED_LABELS = {'normal': 'Normal', 'fast': 'Fast (recommended)', 'very_fast': 'Very fast'}
@@ -40,6 +47,38 @@ def clean_dialogue(text: str) -> str:
     text = text.strip()
     text = re.sub(r'\s+', ' ', text)
     return text
+
+
+def catch_up_rate(rate: str, backlog: int) -> str:
+    """Speak faster while earlier lines are still playing or queued: '+35%', 2 → '+75%'."""
+    if backlog <= 0:
+        return rate
+    try:
+        pct = float(rate.replace('%', '').replace('+', ''))
+    except ValueError:
+        return rate
+    return f'+{pct + min(backlog * _CATCHUP_STEP_PCT, _CATCHUP_MAX_PCT):g}%'
+
+
+def _norm(text: str) -> str:
+    return re.sub(r'[\s.!?…,;:\-]+$', '', text.casefold()).strip()
+
+
+def unspoken_part(text: str, last: str | None) -> str:
+    """Drop what was just spoken: a repeat → '', a fragment that grew → only the new words."""
+    if not last:
+        return text
+    new, old = _norm(text), _norm(last)
+    if not new or new == old:
+        return ''
+    if not old or not new.startswith(old):
+        return text
+    # Find the cut on the original text (casefold can change lengths, e.g. Turkish 'İ')
+    cuts = [i for i in range(len(text) + 1) if _norm(text[:i]) == old]
+    if not cuts or (cuts[0] < len(text) and text[cuts[0]].isalnum()):
+        return text  # no clean word boundary: speak it all
+    rest = text[cuts[-1]:].lstrip(' ,;:-.…')
+    return rest if any(c.isalnum() for c in rest) else ''
 
 
 class TTSCache:
@@ -81,7 +120,11 @@ class FastDubbingEngine:
         gain: float = 2.0,
         duck_enabled: bool = True,
         duck_level: float = 0.25,
+        smooth: bool = True,
     ):
+        self._smooth = smooth
+        self._last_spoken: str | None = None
+        self._last_spoken_at = 0.0
         self._speech_rate = SPEED_RATES.get(speed, speed if str(speed).endswith('%') else '+35%')
         self._duck_level = duck_level
         self._voice_key = voice_key
@@ -144,8 +187,10 @@ class FastDubbingEngine:
             return t('The dubbing voice model has not been downloaded.')
         return None
 
-    def configure(self, speed: str, volume: float, gain: float, duck_enabled: bool = True, duck_level: float = 0.25):
+    def configure(self, speed: str, volume: float, gain: float, duck_enabled: bool = True, duck_level: float = 0.25, smooth: bool | None = None):
         """Update settings while running."""
+        if smooth is not None:
+            self._smooth = smooth
         self.set_speech_rate(SPEED_RATES.get(speed, '+35%'))
         self.set_volume(volume)
         self.set_gain(gain)
@@ -286,7 +331,16 @@ class FastDubbingEngine:
             self._enqueue(text)
 
     def _enqueue(self, text: str):
-        self._interrupt_event.set()
+        if self._smooth:
+            # Keep the current line playing; skip text that was just spoken
+            now = time.time()
+            last = self._last_spoken if now - self._last_spoken_at < _REPEAT_WINDOW_SEC else None
+            full, text = text, unspoken_part(text, last)
+            if not text:
+                return
+            self._last_spoken, self._last_spoken_at = full, now
+        else:
+            self._interrupt_event.set()
         cached = self._cache.get(text, self._speech_rate)
         if cached:
             self._queue.put(('__CACHED__', text, cached))
@@ -355,24 +409,28 @@ class FastDubbingEngine:
             if piper is None or not piper.is_ready:
                 logger.warning('[TTS] Piper not ready: %s', piper.init_error if piper else '?')
                 continue
+            rate, pause_ms = self._speech_rate, 0
+            if self._smooth:
+                backlog = int(self._tts_playing_event.is_set()) + self._play_queue.qsize()
+                rate, pause_ms = catch_up_rate(rate, backlog), _SENTENCE_PAUSE_MS
             parts = []
             for seg in self._split_into_segments(text):
                 if self._stop_event.is_set() or self._interrupt_event.is_set():
                     break
-                cached = self._cache.get(seg, self._speech_rate)
+                cached = self._cache.get(seg, rate)
                 if cached:
                     parts.append(cached)
                     continue
-                audio, err = piper.synthesize(seg, rate=self._speech_rate)
+                audio, err = piper.synthesize(seg, rate=rate, sentence_pause_ms=pause_ms)
                 if err:
                     logger.warning('[TTS] Synthesis error: %s', err)
                     continue
                 if not audio:
                     continue
-                self._cache.put(seg, self._speech_rate, audio)
+                self._cache.put(seg, rate, audio)
                 parts.append(audio)
             if parts:
-                self._push_playback(concat_wavs(parts))
+                self._push_playback(concat_wavs(parts, gap_ms=pause_ms))
 
     def _push_playback(self, audio: bytes):
         if not audio:
@@ -413,7 +471,7 @@ class FastDubbingEngine:
                 queued_at, candidate = self._play_queue.get_nowait()
             except Empty:
                 break
-            if time.time() - queued_at > _MAX_UTTERANCE_AGE:
+            if time.time() - queued_at > (_SMOOTH_MAX_UTTERANCE_AGE if self._smooth else _MAX_UTTERANCE_AGE):
                 logger.debug('[TTS] Skipped stale audio (waited too long in the queue)')
                 continue
             audio_data = candidate

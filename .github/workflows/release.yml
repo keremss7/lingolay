@@ -35,6 +35,13 @@ jobs:
       - name: Zip
         shell: pwsh
         run: Compress-Archive -Path dist/Lingolay/* -DestinationPath "Lingolay-${{ github.ref_name }}-windows-x64.zip"
+      # Manual runs on a branch: keep the zip as a downloadable test build instead of publishing a release
+      - uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: Lingolay-test-build-windows-x64
+          path: Lingolay-*-windows-x64.zip
+          retention-days: 14
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:

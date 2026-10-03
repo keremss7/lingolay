@@ -896,6 +896,10 @@ class MainWindow(QMainWindow):
         speed_row.addWidget(_field_label(t('Speech rate:')))
         speed_row.addWidget(self._cmb_tts_speed, 1)
         card.add_row(speed_row)
+        self._chk_smooth = QCheckBox(t('Natural flow (finish sentences instead of cutting them off)'))
+        self._chk_smooth.setChecked(tts.smooth_flow)
+        self._chk_smooth.setToolTip(t('Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.'))
+        card.add_widget(self._chk_smooth)
 
         self._sld_tts_volume, self._lbl_tts_vol_val = self._slider_row(card, t('Volume:'), 0, 100, tts.volume, lambda v: f'%{v}')
         self._sld_tts_gain, self._lbl_tts_gain_val = self._slider_row(card, t('Boost:'), 100, 400, tts.gain, lambda v: f'{v / 100:.1f}x')
@@ -1153,9 +1157,11 @@ class MainWindow(QMainWindow):
         tts.gain = self._sld_tts_gain.value()
         tts.duck_enabled = self._chk_duck.isChecked()
         tts.duck_level = self._sld_duck.value()
+        tts.smooth_flow = self._chk_smooth.isChecked()
         save_settings()
         if self._tts_engine:
-            self._tts_engine.configure(tts.speed, tts.volume / 100.0, tts.gain / 100.0, duck_enabled=tts.duck_enabled, duck_level=tts.duck_level / 100.0)
+            self._tts_engine.configure(tts.speed, tts.volume / 100.0, tts.gain / 100.0, duck_enabled=tts.duck_enabled,
+                                       duck_level=tts.duck_level / 100.0, smooth=tts.smooth_flow)
         self._sb.showMessage(t('Dubbing settings saved.'), 3000)
 
     def _set_tts_checked(self, checked):
@@ -1181,7 +1187,7 @@ class MainWindow(QMainWindow):
         tts = s.tts
         if self._tts_engine is None or self._tts_engine.voice_key != voice:
             self._tts_engine = FastDubbingEngine(speed=tts.speed, voice_key=voice, volume=tts.volume / 100.0, gain=tts.gain / 100.0,
-                                                 duck_enabled=tts.duck_enabled, duck_level=tts.duck_level / 100.0)
+                                                 duck_enabled=tts.duck_enabled, duck_level=tts.duck_level / 100.0, smooth=tts.smooth_flow)
         if self._tts_engine.voice_missing:
             from lingolay.models.manifest import get_model
             size = get_model(voice).approx_size_mb
