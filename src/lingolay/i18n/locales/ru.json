@@ -245,5 +245,7 @@
   "{w} × {h} px   at ({x}, {y})   screen {monitor}": "{w} × {h} пикс.   в ({x}, {y})   экран {monitor}",
   "• NLLB Fast (600M) — runs on any PC, good quality, fully offline\n• NLLB Quality (1.3B) — better quality, needs more RAM / a GPU\n• DeepL API — best quality, zero GPU load; needs internet and your own free API key": "• NLLB Быстрая (600M) — работает на любом ПК, хорошее качество, полностью офлайн\n• NLLB Качество (1.3B) — качество выше, нужно больше RAM / GPU\n• DeepL API — лучшее качество, без нагрузки на GPU; нужен интернет и ваш бесплатный API-ключ",
   "🎯 Drag to select the subtitle area  |  ESC: cancel": "🎯 Выделите область субтитров  |  ESC: отмена",
-  "🔍 OCR preview": "🔍 Предпросмотр OCR"
+  "🔍 OCR preview": "🔍 Предпросмотр OCR",
+  "Natural flow (finish sentences instead of cutting them off)": "Естественный поток (договаривает фразы, не обрывая их)",
+  "Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.": "Даёт договорить каждую фразу, добавляет короткие паузы между предложениями и немного ускоряется, чтобы догнать. Отключите, чтобы вернуть прежнее поведение."
 }

@@ -50,6 +50,7 @@ class TTSConfig:
     gain: int = 200
     duck_enabled: bool = True
     duck_level: int = 25
+    smooth_flow: bool = True  # finish lines instead of cutting them off
 
 
 def _default_hotkeys():

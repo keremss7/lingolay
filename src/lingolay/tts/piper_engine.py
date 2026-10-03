@@ -156,6 +156,7 @@ class PiperEngine:
         rate: str = '+35%',
         speaker_id: int | None = None,
         pitch: float = 0.0,
+        sentence_pause_ms: int = 0,
     ) -> tuple[bytes | None, str | None]:
         if not self._voice:
             return (None, self._init_error or t('Piper is not ready'))
@@ -185,7 +186,9 @@ class PiperEngine:
                 pcm_parts.append(chunk.audio_int16_bytes)
                 sample_rate = chunk.sample_rate
                 channels = chunk.sample_channels
-            wav_data = _pcm_to_wav(b''.join(pcm_parts), sample_rate, channels)
+            # Piper yields one chunk per sentence; a short silence between them gives a natural pause
+            pause = b'\x00' * (int(sample_rate * sentence_pause_ms / 1000) * channels * 2)
+            wav_data = _pcm_to_wav(pause.join(pcm_parts), sample_rate, channels)
             if pitch != 0.0:
                 wav_data = _pitch_shift_wav(wav_data, pitch)
             latency = int((time.perf_counter() - start) * 1000)
