@@ -245,5 +245,7 @@
   "{w} × {h} px   at ({x}, {y})   screen {monitor}": "{w} × {h} px   konum ({x}, {y})   ekran {monitor}",
   "• NLLB Fast (600M) — runs on any PC, good quality, fully offline\n• NLLB Quality (1.3B) — better quality, needs more RAM / a GPU\n• DeepL API — best quality, zero GPU load; needs internet and your own free API key": "• NLLB Hızlı (600M) — her bilgisayarda çalışır, iyi kalite, tamamen çevrimdışı\n• NLLB Kaliteli (1.3B) — daha iyi kalite, daha fazla RAM / GPU ister\n• DeepL API — en iyi kalite, GPU yükü sıfır; internet ve kendi ücretsiz API anahtarınız gerekir",
   "🎯 Drag to select the subtitle area  |  ESC: cancel": "🎯 Fare ile altyazı bölgesini seçin  |  ESC: İptal",
-  "🔍 OCR preview": "🔍 OCR Önizleme"
+  "🔍 OCR preview": "🔍 OCR Önizleme",
+  "Natural flow (finish sentences instead of cutting them off)": "Doğal akış (cümleleri yarıda kesmeden bitirir)",
+  "Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.": "Her satırın bitmesini bekler, cümleler arasına kısa duraklar ekler ve geride kalınca biraz hızlanır. Eski davranış için kapatın."
 }
