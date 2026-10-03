@@ -17,7 +17,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d6)
 [![Stars](https://img.shields.io/github/stars/keremss7/lingolay?style=social)](https://github.com/keremss7/lingolay/stargazers)
 
-[**⬇ Download for Windows**](https://github.com/keremss7/lingolay/releases/latest) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Contributing](#-contributing) · [🇹🇷 Türkçe](docs/README.tr.md)
+[**⬇ Download for Windows**](https://github.com/keremss7/lingolay/releases/latest) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Contributing](#-contributing) · [🇹🇷 Türkçe](docs/README.tr.md) · [🇷🇺 Русский](docs/README.ru.md)
 
 <img src="docs/images/demo.png" alt="Lingolay translating a subtitle in real time" width="820">
 
@@ -36,7 +36,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 | 🧠 **Smart subtitle handling** | Waits for typewriter‑style subtitles to finish, ignores OCR flicker, never re‑translates a line it already showed, and never reads its own overlay. |
 | ⚡ **Fast** | ~150–250 ms per sentence on a regular CPU, faster with an NVIDIA GPU. Adaptive capture rate keeps CPU usage low. |
 | 🧩 **Optional DeepL** | Bring your own free DeepL API key for maximum quality with zero GPU load. |
-| 🎨 **Fully customizable** | Font, size, colors, outline or box, width, position, per‑game capture profiles, rebindable hotkeys. English & Turkish UI. |
+| 🎨 **Fully customizable** | Font, size, colors, outline or box, width, position, per‑game capture profiles, rebindable hotkeys. English, Turkish & Russian UI. |
 
 ## 🖼️ Screenshots
 
