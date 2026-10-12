@@ -29,3 +29,23 @@ def test_main_window_builds(qapp):
     w._region_selector.close()
     w.deleteLater()
     qapp.processEvents()
+
+
+def test_grown_typewriter_subtitle_is_translated_again(qapp):
+    # Issue #12: the half-typed line was translated, the finished line was then taken for a duplicate
+    from lingolay.core.pipeline import Pipeline
+    p = Pipeline(qapp)
+    full = ('But he never expected that his desperate gamble would directly cause her authority '
+            'to spiral out of control, triggering the Great Shadow Calamity...')
+    partial = full[:full.index('triggering') + len('triggering')]
+    assert p._extract_new_sentences(partial) == partial
+    assert p._extract_new_sentences(full) == full
+    assert p._extract_new_sentences(full) == ''  # and only once
+
+
+def test_ocr_jitter_is_still_a_duplicate(qapp):
+    from lingolay.core.pipeline import Pipeline
+    p = Pipeline(qapp)
+    assert p._extract_new_sentences('So this is sea otter meat.')
+    assert p._extract_new_sentences('So this islsa otter meat.') == ''
+    assert p._extract_new_sentences('So this is sea otter meat. l') == ''
