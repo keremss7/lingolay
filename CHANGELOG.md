@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] — 2026-10-12
+
+### Added
+- **German interface** — thanks to [@Mr-Neutr0n](https://github.com/Mr-Neutr0n) ([#11](https://github.com/keremss7/lingolay/pull/11)).
+
+### Fixed
+- Long subtitles (over 150 characters) lost their last words before translation ([#12](https://github.com/keremss7/lingolay/issues/12)).
+- Subtitles that are typed out letter by letter were translated while half-typed, and the finished line was skipped as a duplicate ([#12](https://github.com/keremss7/lingolay/issues/12)). Thanks to [@povizun](https://github.com/povizun) for the detailed report.
+
 ## [2.1.0] — 2026-10-04
 
 ### Added

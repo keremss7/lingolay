@@ -36,7 +36,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 | 🧠 **Smart subtitle handling** | Waits for typewriter‑style subtitles to finish, ignores OCR flicker, never re‑translates a line it already showed, and never reads its own overlay. |
 | ⚡ **Fast** | ~150–250 ms per sentence on a regular CPU, faster with an NVIDIA GPU. Adaptive capture rate keeps CPU usage low. |
 | 🧩 **Optional DeepL** | Bring your own free DeepL API key for maximum quality with zero GPU load. |
-| 🎨 **Fully customizable** | Font, size, colors, outline or box, width, position, per‑game capture profiles, rebindable hotkeys. English, Turkish & Russian UI. |
+| 🎨 **Fully customizable** | Font, size, colors, outline or box, width, position, per‑game capture profiles, rebindable hotkeys. English, Turkish, Russian & German UI. |
 
 ## 🖼️ Screenshots
 
