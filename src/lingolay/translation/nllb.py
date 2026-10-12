@@ -51,7 +51,7 @@ def _post_process_turkish(text):
 
 
 class NLLBTranslator:
-    MAX_TEXT_LENGTH = 150
+    MAX_TEXT_LENGTH = 600  # sentences are translated one by one; this only guards against runaway OCR text
     MAX_RETRIES = 2
     LENGTH_PENALTY = 1.2
 
@@ -266,7 +266,7 @@ class NLLBTranslator:
             return TranslationResult(text='', error=self._init_error or t('The model is not ready'))
         text = self._preprocess(text)
         if len(text) > self.MAX_TEXT_LENGTH:
-            text = text[:self.MAX_TEXT_LENGTH]
+            text = text[:self.MAX_TEXT_LENGTH].rsplit(' ', 1)[0]
         if not text.strip():
             return TranslationResult(text='')
         cached = self._cache.get(text)
