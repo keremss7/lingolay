@@ -384,7 +384,13 @@ class Pipeline(QObject):
         if len(kc) < 6:
             return False
         for seen in self._translated_sentences:
-            if seen.replace(' ', '') == kc or seq_ratio(seen, key) >= 0.88:
+            if seen.replace(' ', '') == kc:
+                return True
+            # Typewriter subtitles grow: a longer reading that starts like `seen` has new words to translate
+            grown = key[len(seen):]
+            if sum(c.isalpha() for c in grown) >= 3 and seq_ratio(seen, key[:len(seen)]) >= 0.88:
+                continue
+            if seq_ratio(seen, key) >= 0.88:
                 return True
         return False
 
