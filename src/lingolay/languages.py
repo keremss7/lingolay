@@ -35,6 +35,12 @@ LANGUAGES = {
         Language('zh', 'Chinese (Simplified)', '简体中文', 'zho_Hans', 'zh-Hans-CN', False),
         Language('ja', 'Japanese', '日本語', 'jpn_Jpan', 'ja-JP', False),
         Language('ko', 'Korean', '한국어', 'kor_Hang', 'ko-KR', False),
+        Language('hi', 'Hindi', 'हिन्दी', 'hin_Deva', 'hi-IN', False),
+        Language('ur', 'Urdu', 'اردو', 'urd_Arab', 'ur-PK', False),
+        Language('bn', 'Bengali', 'বাংলা', 'ben_Beng', 'bn-BD', False),
+        Language('vi', 'Vietnamese', 'Tiếng Việt', 'vie_Latn', 'vi-VN', True),
+        Language('id', 'Indonesian', 'Bahasa Indonesia', 'ind_Latn', 'id-ID', True),
+        Language('th', 'Thai', 'ไทย', 'tha_Thai', 'th-TH', False),
     )
 }
 

@@ -18,9 +18,9 @@ Lingolay ekrandaki altyazıyı okur, Meta'nın NLLB‑200 yapay zekâ modeliyle 
 ## ✨ Öne çıkanlar
 
 - 🔒 **%100 çevrimdışı ve gizli** — hesap, API anahtarı veya veri toplama yok. Çeviri tamamen senin bilgisayarında yapılır.
-- 🌍 **15 dil, her yöne** — İngilizce, Japonca, Çince, Korece, Rusça, Almanca, Fransızca, İspanyolca, Portekizce, İtalyanca, Felemenkçe, Lehçe, Ukraynaca, Arapça, Türkçe. Ekrandaki dil → hedef dil serbest.
+- 🌍 **21 dil, her yöne** — İngilizce, Japonca, Çince, Korece, Rusça, Almanca, Fransızca, İspanyolca, Portekizce, İtalyanca, Felemenkçe, Lehçe, Ukraynaca, Arapça, Türkçe, Hintçe, Urduca, Bengalce, Vietnamca, Endonezce, Tayca. Ekrandaki dil → hedef dil serbest.
 - 🎮 **Oyunlar için tasarlandı** — oyun modu (otomatik borderless), tıklamayı geçiren ve her zaman üstte kalan overlay, oyun içinde çalışan kısayollar.
-- 🗣️ **Yapay zekâ dublaj** — çeviriler Piper sesleriyle (yine çevrimdışı) seslendirilir, bu sırada oyunun sesi otomatik kısılır.
+- 🗣️ **Yapay zekâ dublaj** — çeviriler Piper sesleriyle (yine çevrimdışı) seslendirilir, bu sırada oyunun sesi otomatik kısılır. Tayca dışındaki tüm hedef dillerde kullanılabilir.
 - 🧠 **Akıllı altyazı takibi** — harf harf yazılan altyazının bitmesini bekler, OCR titremesini yok sayar, aynı cümleyi iki kez çevirmez.
 - 🇹🇷 **Türkçeye özel son işlem** — i/İ büyük harf kuralları, efekt etiketleri ([LAUGHING] → [GÜLÜYOR]), tekrar temizliği.
 - 🧩 **İsteğe bağlı DeepL** — kendi ücretsiz DeepL anahtarınla en yüksek kalite.

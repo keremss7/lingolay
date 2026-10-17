@@ -28,7 +28,7 @@ except Exception:
 _MAX_UTTERANCE_AGE = 3.0
 _MAX_PENDING_UTTERANCES = 2
 _DEBOUNCE_SEC = 0.18
-_SENTENCE_END = {'.', '!', '?', '…'}
+_SENTENCE_END = {'.', '!', '?', '…', '।', '۔', '؟', '。', '！', '？'}  # incl. Hindi/Bengali danda, Urdu full stop, CJK
 _MAX_SEG_LEN = 200
 
 # Natural flow mode: finish the current line instead of cutting it off, catch up by speaking faster
@@ -61,7 +61,7 @@ def catch_up_rate(rate: str, backlog: int) -> str:
 
 
 def _norm(text: str) -> str:
-    return re.sub(r'[\s.!?…,;:\-]+$', '', text.casefold()).strip()
+    return re.sub(r'[\s.!?…,;:\-।۔؟。！？]+$', '', text.casefold()).strip()
 
 
 def unspoken_part(text: str, last: str | None) -> str:
@@ -369,7 +369,7 @@ class FastDubbingEngine:
         text = text.strip()
         if len(text) <= max_len:
             return [text]
-        raw = re.split(r'(?<=[.!?])\s+', text)
+        raw = re.split(r'(?<=[.!?।۔؟])\s+', text)
         segments = []
         for s in raw:
             s = s.strip()
