@@ -70,3 +70,10 @@ def test_natural_flow_lets_the_current_line_finish_and_skips_repeats():
     eng._enqueue('Second line.')
     texts = [eng._queue.get_nowait()[1] for _ in range(eng._queue.qsize())]
     assert texts == ['First line.', 'Second line.']
+
+
+def test_hindi_and_urdu_sentence_ends_are_recognized():
+    eng = _engine(smooth=True)
+    eng.speak('उन्होंने इसे नष्ट कर दिया।')
+    eng.speak('انہوں نے اسے تباہ کر دیا۔')
+    assert eng._queue.qsize() == 2  # spoken right away, not held back as unfinished fragments

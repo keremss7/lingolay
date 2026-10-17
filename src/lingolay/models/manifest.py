@@ -88,6 +88,7 @@ _PIPER_REPO = 'rhasspy/piper-voices'
 _PIPER_REVISION = 'c10ece1aade47bb51c153c893d14e5bf8e5b7117'
 
 # target language → (Piper voice id, files). All voices: https://huggingface.co/rhasspy/piper-voices
+# Thai (th_TH-tsync2) is left out: it needs the extra 'tltk' phonemizer package.
 VOICE_TABLE = {
     'en': ('en_US-lessac-medium', (RemoteFile('en/en_US/lessac/medium/en_US-lessac-medium.onnx', 63201294, '5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f'), RemoteFile('en/en_US/lessac/medium/en_US-lessac-medium.onnx.json', 4885))),
     'tr': ('tr_TR-dfki-medium', (RemoteFile('tr/tr_TR/dfki/medium/tr_TR-dfki-medium.onnx', 63201294, '2844717f524ab965d3fe86e60562cbb601d3e456836efcc2196cc3a14112a8fb'), RemoteFile('tr/tr_TR/dfki/medium/tr_TR-dfki-medium.onnx.json', 4960))),
@@ -104,6 +105,11 @@ VOICE_TABLE = {
     'nl': ('nl_NL-mls-medium', (RemoteFile('nl/nl_NL/mls/medium/nl_NL-mls-medium.onnx', 76584246, '88312e0fbf505b87caf2373d94c1384892e86b1bf2ee482cf65dc8ba179cc7d3'), RemoteFile('nl/nl_NL/mls/medium/nl_NL-mls-medium.onnx.json', 5856))),
     'pl': ('pl_PL-darkman-medium', (RemoteFile('pl/pl_PL/darkman/medium/pl_PL-darkman-medium.onnx', 63201294, 'db505438a5364e8e2e0242c4324130a873ed660dfbe8d9689cef428ffb1b645f'), RemoteFile('pl/pl_PL/darkman/medium/pl_PL-darkman-medium.onnx.json', 4816))),
     'uk': ('uk_UA-ukrainian_tts-medium', (RemoteFile('uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx', 76735663, '7920419ac5f6fd8b6450520f24b52ed5a319cb53dd018fbcd71c9e079cbac84f'), RemoteFile('uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx.json', 2002))),
+    'hi': ('hi_IN-pratham-medium', (RemoteFile('hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx', 63516050, '169964b0871667f6793416d4b35e97357a68ba1ad01df8580c28048989ee7693'), RemoteFile('hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx.json', 4970))),
+    'ur': ('ur_PK-fasih-medium', (RemoteFile('ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx', 63532015, '46d590b90fbb41e4d4f2c54ded44874917f8b11b6e0500de2a89e5d3731b5917'), RemoteFile('ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx.json', 3146))),
+    'bn': ('bn_BD-google-medium', (RemoteFile('bn/bn_BD/google/medium/bn_BD-google-medium.onnx', 76782515, 'f2e7518ed5534a755024a48c71b80bf617efaf12570bbdf3ce255a9526a8afd3'), RemoteFile('bn/bn_BD/google/medium/bn_BD-google-medium.onnx.json', 5494))),
+    'vi': ('vi_VN-vais1000-medium', (RemoteFile('vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx', 63201294, 'ec7c89e2c85f4d1edc24b6120c18aaf1bda614f06b511567eb9c7c0de15e2dab'), RemoteFile('vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx.json', 4860))),
+    'id': ('id_ID-news_tts-medium', (RemoteFile('id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx', 62950044, 'ed8f02aa593f7af6b19acbdb8142e0da0dd72f46194eb33d38e0eb10a52597e8'), RemoteFile('id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx.json', 5050))),
 }
 
 VOICES = {

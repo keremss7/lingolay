@@ -19,9 +19,13 @@ def test_get_language_falls_back_to_english():
     assert 'Türkçe' in display_name('tr')
 
 
+# Languages that translate fine but have no bundled-ready dubbing voice yet
+TRANSLATION_ONLY = {'th'}
+
+
 def test_every_language_has_a_dubbing_voice():
     for code in LANGUAGES:
-        assert voice_for_language(code), code
+        assert bool(voice_for_language(code)) == (code not in TRANSLATION_ONLY), code
     assert set(VOICES) == {v for v, _ in VOICE_TABLE.values()}
 
 
