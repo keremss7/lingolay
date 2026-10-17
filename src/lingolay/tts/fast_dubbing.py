@@ -14,6 +14,7 @@ from lingolay.i18n import t
 from .audio_gain import boost_wav, concat_wavs
 from .ducking import AudioDucker
 from .piper_engine import DEFAULT_VOICE, PIPER_AVAILABLE, PIPER_IMPORT_ERROR, PiperEngine, model_is_downloaded
+from .voice_transform import change_gender
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,12 @@ class FastDubbingEngine:
 
         self._pending_lock = threading.Lock()
         self._pending_text: str | None = None
+        self._pending_audio = None
+
+        # "Match the speaker's voice" (experimental): off unless set_speaker_matching() is called
+        self._matcher = None
+        self._gender_voices = None
+        self._extra_pipers: dict[str, PiperEngine] = {}
         self._pending_timer: threading.Timer | None = None
 
     @property
@@ -295,22 +302,33 @@ class FastDubbingEngine:
 
         logger.info('[TTS] Dubbing disabled')
 
+    def set_speaker_matching(self, matcher, gender_voices):
+        """Pick a male/female voice per line from the game audio; matcher=None turns it off."""
+        self._matcher = matcher if gender_voices else None
+        self._gender_voices = gender_voices if matcher else None
+
     def speak(self, text: str):
         if not self._is_enabled or self._should_skip(text):
             return None
         text = clean_dialogue(text)
         if not text:
             return None
+        matcher = self._matcher
+        audio = matcher.snapshot() if matcher else None  # what was heard when this line appeared
         with self._pending_lock:
             if text[-1] in _SENTENCE_END:
                 if self._pending_text:
                     text = self._pending_text + ' ' + text
                     self._pending_text = None
+                    audio = self._pending_audio if self._pending_audio is not None else audio
+                    self._pending_audio = None
                 if self._pending_timer:
                     self._pending_timer.cancel()
                     self._pending_timer = None
-                self._enqueue(text)
+                self._enqueue(text, audio)
             else:
+                if self._pending_text is None:
+                    self._pending_audio = audio
                 self._pending_text = text
                 if self._pending_timer:
                     self._pending_timer.cancel()
@@ -324,13 +342,13 @@ class FastDubbingEngine:
 
     def _flush_pending(self):
         with self._pending_lock:
-            text = self._pending_text
-            self._pending_text = None
+            text, audio = self._pending_text, self._pending_audio
+            self._pending_text, self._pending_audio = None, None
             self._pending_timer = None
         if text:
-            self._enqueue(text)
+            self._enqueue(text, audio)
 
-    def _enqueue(self, text: str):
+    def _enqueue(self, text: str, audio=None):
         if self._smooth:
             # Keep the current line playing; skip text that was just spoken
             now = time.time()
@@ -341,6 +359,9 @@ class FastDubbingEngine:
             self._last_spoken, self._last_spoken_at = full, now
         else:
             self._interrupt_event.set()
+        if self._matcher is not None:
+            self._queue.put(('__MATCH__', text, audio))  # the voice is chosen in the worker
+            return
         cached = self._cache.get(text, self._speech_rate)
         if cached:
             self._queue.put(('__CACHED__', text, cached))
@@ -359,11 +380,26 @@ class FastDubbingEngine:
     def clear_cache(self):
         self._cache = TTSCache()
 
-    def _get_piper(self) -> PiperEngine | None:
+    def _get_piper(self, voice_key: str | None = None) -> PiperEngine | None:
         with self._piper_lock:
+            if voice_key and voice_key != self._voice_key:
+                engine = self._extra_pipers.get(voice_key)
+                if engine is None or not engine.is_ready:
+                    engine = self._extra_pipers[voice_key] = PiperEngine(voice_key=voice_key)
+                return engine
             if self._piper is None or not self._piper.is_ready:
                 self._piper = PiperEngine(voice_key=self._voice_key)
             return self._piper
+
+    def _choose_voice(self, audio):
+        """(voice key, speaker id, transform) for a line; the default voice when the speaker is unknown."""
+        matcher, voices = self._matcher, self._gender_voices
+        if matcher is None or not voices:
+            return self._voice_key, None, None
+        choice = voices.get(matcher.decide(audio))
+        if choice is None:
+            return self._voice_key, None, None
+        return choice.voice, choice.speaker, choice.transform
 
     def _split_into_segments(self, text: str, max_len: int = _MAX_SEG_LEN):
         text = text.strip()
@@ -405,7 +441,8 @@ class FastDubbingEngine:
             if item_type == '__CACHED__':
                 self._push_playback(data)
                 continue
-            piper = self._get_piper()
+            voice_key, speaker, transform = self._choose_voice(data) if item_type == '__MATCH__' else (None, None, None)
+            piper = self._get_piper(voice_key)
             if piper is None or not piper.is_ready:
                 logger.warning('[TTS] Piper not ready: %s', piper.init_error if piper else '?')
                 continue
@@ -413,21 +450,24 @@ class FastDubbingEngine:
             if self._smooth:
                 backlog = int(self._tts_playing_event.is_set()) + self._play_queue.qsize()
                 rate, pause_ms = catch_up_rate(rate, backlog), _SENTENCE_PAUSE_MS
+            cache_tag = rate if voice_key is None else f'{rate}|{voice_key}|{speaker}|{transform}'
             parts = []
             for seg in self._split_into_segments(text):
                 if self._stop_event.is_set() or self._interrupt_event.is_set():
                     break
-                cached = self._cache.get(seg, rate)
+                cached = self._cache.get(seg, cache_tag)
                 if cached:
                     parts.append(cached)
                     continue
-                audio, err = piper.synthesize(seg, rate=rate, sentence_pause_ms=pause_ms)
+                audio, err = piper.synthesize(seg, rate=rate, speaker_id=speaker, sentence_pause_ms=pause_ms)
                 if err:
                     logger.warning('[TTS] Synthesis error: %s', err)
                     continue
                 if not audio:
                     continue
-                self._cache.put(seg, rate, audio)
+                if transform:
+                    audio = change_gender(audio, transform)
+                self._cache.put(seg, cache_tag, audio)
                 parts.append(audio)
             if parts:
                 self._push_playback(concat_wavs(parts, gap_ms=pause_ms))

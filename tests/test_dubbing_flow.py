@@ -90,3 +90,41 @@ def test_japanese_works_without_the_sudachi_dictionary(monkeypatch):
     use_openjtalk_dictionary_only()
     from piper.phonemize_japanese import JapanesePhonemizer
     assert JapanesePhonemizer().phonemize('一緒に行きましょう。')[0]
+
+
+class _FakeMatcher:
+    def __init__(self, gender):
+        self.gender, self.seen = gender, []
+
+    def snapshot(self):
+        return 'audio-at-speak-time'
+
+    def decide(self, audio):
+        self.seen.append(audio)
+        return self.gender
+
+
+def _gender_voices():
+    from lingolay.models.manifest import GenderVoice
+    return {'female': GenderVoice('xx_F-voice', speaker=1), 'male': GenderVoice('xx_M-voice', transform='male')}
+
+
+def test_speaker_matching_picks_the_voice_for_the_detected_gender():
+    eng = _engine(smooth=True)
+    matcher = _FakeMatcher('male')
+    eng.set_speaker_matching(matcher, _gender_voices())
+    eng.speak('Lower your weapon.')
+    kind, text, audio = eng._queue.get_nowait()
+    assert (kind, text, audio) == ('__MATCH__', 'Lower your weapon.', 'audio-at-speak-time')
+    assert eng._choose_voice(audio) == ('xx_M-voice', None, 'male')
+    matcher.gender = 'female'
+    assert eng._choose_voice(audio) == ('xx_F-voice', 1, None)
+
+
+def test_unknown_speaker_or_matching_off_uses_the_default_voice():
+    eng = _engine(smooth=True)
+    eng.set_speaker_matching(_FakeMatcher(None), _gender_voices())
+    assert eng._choose_voice('audio') == (eng._voice_key, None, None)
+    eng.set_speaker_matching(None, None)
+    eng.speak('Hello there.')
+    assert eng._queue.get_nowait()[0] == '__SYNTH__'  # the original code path

@@ -231,6 +231,10 @@ def _selftest():
         phonemes = JapanesePhonemizer().phonemize('こんにちは')
         return bool(phonemes and phonemes[0]), 'ok'
 
+    def voice_transform():
+        from lingolay.tts import voice_transform as vt
+        return vt.PARSELMOUTH_AVAILABLE, 'ok' if vt.PARSELMOUTH_AVAILABLE else 'praat-parselmouth is not installed'
+
     def system_audio():
         import time
 
@@ -259,6 +263,7 @@ def _selftest():
     check('Audio ducking (pycaw)', ducking, required=False)
     check('Dubbing (piper + pygame)', tts, required=False)
     check('Japanese voice (pyopenjtalk)', japanese_voice, required=sys.platform == 'win32')
+    check('Voice transform (parselmouth)', voice_transform, required=False)
     check('System audio capture', system_audio, required=False)
     failed = False
     lines = []

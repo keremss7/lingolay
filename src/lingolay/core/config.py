@@ -51,6 +51,7 @@ class TTSConfig:
     duck_enabled: bool = True
     duck_level: int = 25
     smooth_flow: bool = True  # finish lines instead of cutting them off
+    match_speaker: bool = False  # experimental: male/female voice from the game audio
 
 
 def _default_hotkeys():

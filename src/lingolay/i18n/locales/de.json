@@ -247,5 +247,11 @@
   "🎯 Drag to select the subtitle area  |  ESC: cancel": "🎯 Ziehen, um den Untertitelbereich zu wählen  |  ESC: Abbrechen",
   "🔍 OCR preview": "🔍 OCR-Vorschau",
   "Natural flow (finish sentences instead of cutting them off)": "Natürlicher Fluss (Sätze zu Ende sprechen statt abzuschneiden)",
-  "Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.": "Lässt jede Zeile aussprechen, fügt kurze Pausen zwischen Sätzen ein und spricht etwas schneller, um aufzuholen. Ausschalten für das frühere Verhalten."
+  "Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.": "Lässt jede Zeile aussprechen, fügt kurze Pausen zwischen Sätzen ein und spricht etwas schneller, um aufzuholen. Ausschalten für das frühere Verhalten.",
+  "Match the speaker's voice (experimental)": "Stimme an Sprecher anpassen (experimentell)",
+  "Listens to the game or video (nothing is recorded), detects whether a man or a woman is speaking and uses a matching voice. Downloads a ~60 MB model and the extra voices on first use.": "Hört beim Spiel oder Video mit (es wird nichts aufgezeichnet), erkennt, ob ein Mann oder eine Frau spricht, und nutzt eine passende Stimme. Lädt beim ersten Mal ein ~60 MB großes Modell und weitere Stimmen herunter.",
+  "Requires Windows 10 version 2004 or later.": "Erfordert Windows 10 Version 2004 oder neuer.",
+  "Matching the speaker's voice needs the speaker model and the voices for this language (~{size} MB). Download them now?": "Für die Sprecheranpassung werden das Sprechermodell und die Stimmen für diese Sprache benötigt (~{size} MB). Jetzt herunterladen?",
+  "Speaker matching could not start: {error}": "Sprecheranpassung konnte nicht gestartet werden: {error}",
+  "Matching the speaker's voice.": "Stimme wird an den Sprecher angepasst."
 }
