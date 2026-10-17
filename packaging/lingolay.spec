@@ -43,6 +43,8 @@ a = Analysis(
     excludes=['tkinter', 'matplotlib', 'PySide6.Qt3DCore', 'PySide6.QtWebEngineCore', 'PySide6.QtQuick', 'sudachidict_core'],
     noarchive=False,
 )
+# The sudachipy hook still collects the dictionary's data files; drop them
+a.datas = [d for d in a.datas if not d[0].replace('\\', '/').startswith('sudachidict_core/')]
 pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
