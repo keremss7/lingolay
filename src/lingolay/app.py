@@ -161,6 +161,9 @@ def _selftest():
     def japanese_voice():
         # Piper's Japanese voice needs pyopenjtalk and its bundled dictionary
         from piper.phonemize_japanese import JapanesePhonemizer
+
+        from lingolay.tts.piper_engine import use_openjtalk_dictionary_only
+        use_openjtalk_dictionary_only()
         phonemes = JapanesePhonemizer().phonemize('こんにちは')
         return bool(phonemes and phonemes[0]), 'ok'
 

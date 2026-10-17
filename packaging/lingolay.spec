@@ -39,7 +39,8 @@ a = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=['tkinter', 'matplotlib', 'PySide6.Qt3DCore', 'PySide6.QtWebEngineCore', 'PySide6.QtQuick'],
+    # sudachidict_core (~190 MB) only refines rare kanji readings; OpenJTalk's own dictionary is used instead
+    excludes=['tkinter', 'matplotlib', 'PySide6.Qt3DCore', 'PySide6.QtWebEngineCore', 'PySide6.QtQuick', 'sudachidict_core'],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

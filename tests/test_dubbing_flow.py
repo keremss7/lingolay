@@ -77,3 +77,16 @@ def test_hindi_and_urdu_sentence_ends_are_recognized():
     eng.speak('उन्होंने इसे नष्ट कर दिया।')
     eng.speak('انہوں نے اسے تباہ کر دیا۔')
     assert eng._queue.qsize() == 2  # spoken right away, not held back as unfinished fragments
+
+
+def test_japanese_works_without_the_sudachi_dictionary(monkeypatch):
+    import sys
+
+    import pytest
+    pyopenjtalk = pytest.importorskip('pyopenjtalk')
+    from lingolay.tts.piper_engine import use_openjtalk_dictionary_only
+    monkeypatch.setitem(sys.modules, 'sudachidict_core', None)  # as in the Windows build
+    monkeypatch.setattr(pyopenjtalk, 'run_frontend', pyopenjtalk.run_frontend)
+    use_openjtalk_dictionary_only()
+    from piper.phonemize_japanese import JapanesePhonemizer
+    assert JapanesePhonemizer().phonemize('一緒に行きましょう。')[0]

@@ -38,6 +38,31 @@ def model_is_downloaded(voice_key: str = DEFAULT_VOICE) -> bool:
     return onnx_path.exists() and json_path.exists()
 
 
+def use_openjtalk_dictionary_only():
+    """
+    The Windows build leaves out the ~190 MB Sudachi dictionary that pyopenjtalk uses to refine
+    rare kanji readings; without it, tell pyopenjtalk to rely on OpenJTalk's bundled dictionary.
+    """
+    try:
+        import sudachidict_core  # noqa: F401
+        return
+    except ImportError:
+        pass
+    try:
+        import pyopenjtalk
+    except ImportError:
+        return
+    if not getattr(pyopenjtalk.run_frontend, '_openjtalk_only', False):
+        original = pyopenjtalk.run_frontend
+
+        def run_frontend(text, *args, **kwargs):
+            kwargs['use_sudachi_kanji_yomi'] = False
+            return original(text, *args, **kwargs)
+
+        run_frontend._openjtalk_only = True
+        pyopenjtalk.run_frontend = run_frontend
+
+
 def _get_short_path(path: str) -> str | None:
     """Return the Windows 8.3 short path (espeak struggles with Unicode paths); None on failure."""
     import sys
@@ -139,6 +164,7 @@ class PiperEngine:
                 except Exception:
                     pass
             from piper.voice import PiperVoice
+            use_openjtalk_dictionary_only()
             self._voice = PiperVoice.load(
                 str(onnx_path),
                 espeak_data_dir=espeak_data_str if espeak_data_str else str(espeak_data),
