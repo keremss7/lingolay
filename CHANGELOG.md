@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] — 2026-10-17
+
+### Fixed
+- **Japanese dubbing produced no audio.** The Japanese voice needs the OpenJTalk phonemizer, which was missing from the Windows build; it is now included and works fully offline ([#17](https://github.com/keremss7/lingolay/pull/17)). The download is about 35 MB larger because of the Japanese dictionary.
+
 ## [2.2.0] — 2026-10-17
 
 ### Added
