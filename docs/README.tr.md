@@ -65,6 +65,12 @@ lingolay --download fast voice:tr     # çeviri modeli + Türkçe dublaj sesi
 - Her oyun/platform için **profil kaydet**.
 - Japonca, Çince, Korece… okumak için Windows'a o dili ekle (*Ayarlar → Saat ve Dil → Dil*, “Optik karakter tanıma” ile).
 
+## 💛 Lingolay'e destek ol
+
+Lingolay ücretsiz, açık kaynak ve reklamsızdır; öyle kalacak. İşine yaradıysa geliştirilmesine **[GitHub Sponsors](https://github.com/sponsors/keremss7)** üzerinden, tek seferlik ya da aylık ve dilediğin tutarla destek olabilirsin.
+
+Destekler hata düzeltmelerine, yeni dillere ve dublaj seslerine, gerçek oyunlarla yapılan testlere gider. Teşekkürler! 🙏
+
 ## 🤝 Katkı
 
 Her türlü katkıya açığız: kod, arayüz çevirisi, hata bildirimi, oyun ön ayarları ya da bir ⭐. Ayrıntılar: [CONTRIBUTING.md](../CONTRIBUTING.md).

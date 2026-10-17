@@ -9,3 +9,5 @@ On first launch the app downloads the translation model you choose (~650 MB – 
 > If the translator fails to load, install the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
 Prefer Python? `pip install "lingolay[all] @ git+https://github.com/keremss7/lingolay"` and run `lingolay`.
+
+💛 Lingolay is free and ad-free. If it helps you, consider [supporting it on GitHub Sponsors](https://github.com/sponsors/keremss7).

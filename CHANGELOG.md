@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] — 2026-10-17
+
+### Added
+- **Six new languages: Hindi, Urdu, Bengali, Vietnamese, Indonesian and Thai** (now 21), with offline dubbing voices for all of them except Thai ([#16](https://github.com/keremss7/lingolay/pull/16)). Requested in [#2](https://github.com/keremss7/lingolay/issues/2), [#15](https://github.com/keremss7/lingolay/issues/15) and [discussion #14](https://github.com/keremss7/lingolay/discussions/14).
+- Lingolay can now be supported on [GitHub Sponsors](https://github.com/sponsors/keremss7).
+
+### Fixed
+- Dubbing recognizes the Hindi/Bengali danda (।), the Urdu full stop (۔) and CJK sentence marks, so those lines are spoken right away.
+
 ## [2.1.1] — 2026-10-12
 
 ### Added

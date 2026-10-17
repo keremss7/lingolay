@@ -16,6 +16,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 ![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d6)
 [![Stars](https://img.shields.io/github/stars/keremss7/lingolay?style=social)](https://github.com/keremss7/lingolay/stargazers)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/keremss7)
 
 [**⬇ Download for Windows**](https://github.com/keremss7/lingolay/releases/latest) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Contributing](#-contributing) · [🇹🇷 Türkçe](docs/README.tr.md) · [🇷🇺 Русский](docs/README.ru.md)
 
@@ -153,6 +154,12 @@ src/lingolay/
 
 Have an idea? [Open a discussion](https://github.com/keremss7/lingolay/discussions).
 
+## 💛 Support Lingolay
+
+Lingolay is free, open source and ad‑free, and it will stay that way. If it helps you play or watch something you couldn't understand before, you can support its development on **[GitHub Sponsors](https://github.com/sponsors/keremss7)**, one‑time or monthly, with any amount you choose.
+
+Sponsorships fund bug fixes, new languages and dubbing voices, and testing with real games. Thank you! 🙏
+
 ## 🤝 Contributing
 
 Contributions of every size are welcome — code, translations, bug reports, game presets, or just a ⭐.
@@ -193,7 +200,8 @@ the CTranslate2 conversions are by [JustFrederik](https://huggingface.co/JustFre
 
 <div align="center">
 
-**If Lingolay helps you enjoy a game or show you couldn't understand before, please consider giving it a ⭐ — it really helps the project grow.**
+**If Lingolay helps you enjoy a game or show you couldn't understand before, please consider giving it a ⭐ — it really helps the project grow.**<br>
+Want to do more? [Become a sponsor 💛](https://github.com/sponsors/keremss7)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=keremss7/lingolay&type=Date)](https://star-history.com/#keremss7/lingolay&Date)
 
