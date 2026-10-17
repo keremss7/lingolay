@@ -11,7 +11,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 
 [![CI](https://github.com/keremss7/lingolay/actions/workflows/ci.yml/badge.svg)](https://github.com/keremss7/lingolay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/keremss7/lingolay?color=ff6929)](https://github.com/keremss7/lingolay/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/keremss7/lingolay/total?color=30cc74)](https://github.com/keremss7/lingolay/releases)
+[![Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fkeremss7%2Flingolay%2Fbadges%2Fdownloads.json)](https://github.com/keremss7/lingolay/releases)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d6)
