@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] — 2026-10-17
+
+### Added
+- **Speaker-aware dubbing** *(experimental, off by default)*: Lingolay listens to the game or video, detects whether a man or a woman is speaking and dubs each line with a matching voice, in all 20 dubbed languages. Enable it under *Voice dubbing → Match the speaker's voice* (Windows 10 version 2004 or later). It hears the system audio without Lingolay's own voice, nothing is recorded, and it works offline after a one-time download of a ~60 MB model and the extra voices ([#18](https://github.com/keremss7/lingolay/pull/18)).
+- `lingolay --listen-test [seconds]` checks the audio capture and speaker detection on your PC.
+
 ## [2.2.1] — 2026-10-17
 
 ### Fixed

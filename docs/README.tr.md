@@ -11,6 +11,8 @@ Lingolay ekrandaki altyazıyı okur, Meta'nın NLLB‑200 yapay zekâ modeliyle 
 
 [**⬇ Windows için indir**](https://github.com/keremss7/lingolay/releases/latest) · [🇬🇧 English](../README.md) · [🇷🇺 Русский](README.ru.md)
 
+> 🆕 **v2.3'te yeni: konuşmacıya duyarlı dublaj.** Kadın karakterin repliği kadın sesiyle, erkeğinki erkek sesiyle, otomatik ve çevrimdışı seslendirilir.
+
 <img src="images/tr/demo.png" alt="Lingolay gerçek zamanlı çeviri" width="820">
 
 </div>
@@ -21,6 +23,7 @@ Lingolay ekrandaki altyazıyı okur, Meta'nın NLLB‑200 yapay zekâ modeliyle 
 - 🌍 **21 dil, her yöne** — İngilizce, Japonca, Çince, Korece, Rusça, Almanca, Fransızca, İspanyolca, Portekizce, İtalyanca, Felemenkçe, Lehçe, Ukraynaca, Arapça, Türkçe, Hintçe, Urduca, Bengalce, Vietnamca, Endonezce, Tayca. Ekrandaki dil → hedef dil serbest.
 - 🎮 **Oyunlar için tasarlandı** — oyun modu (otomatik borderless), tıklamayı geçiren ve her zaman üstte kalan overlay, oyun içinde çalışan kısayollar.
 - 🗣️ **Yapay zekâ dublaj** — çeviriler Piper sesleriyle (yine çevrimdışı) seslendirilir, bu sırada oyunun sesi otomatik kısılır. Tayca dışındaki tüm hedef dillerde kullanılabilir.
+- 🎭 **Konuşmacıya duyarlı dublaj** *(yeni, deneysel)* — Lingolay oyunu ya da videoyu dinler, konuşanın **kadın mı erkek mi** olduğunu anlar ve her repliği **uygun sesle** seslendirir. 20 dilde, tamamen çevrimdışı; Lingolay'in kendi sesi hiç duyulmaz. *Dublaj → Konuşanın sesine uydur* ile açılır (Windows 10 2004+).
 - 🧠 **Akıllı altyazı takibi** — harf harf yazılan altyazının bitmesini bekler, OCR titremesini yok sayar, aynı cümleyi iki kez çevirmez.
 - 🇹🇷 **Türkçeye özel son işlem** — i/İ büyük harf kuralları, efekt etiketleri ([LAUGHING] → [GÜLÜYOR]), tekrar temizliği.
 - 🧩 **İsteğe bağlı DeepL** — kendi ücretsiz DeepL anahtarınla en yüksek kalite.
