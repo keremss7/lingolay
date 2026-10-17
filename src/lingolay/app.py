@@ -231,6 +231,17 @@ def _selftest():
         phonemes = JapanesePhonemizer().phonemize('こんにちは')
         return bool(phonemes and phonemes[0]), 'ok'
 
+    def system_audio():
+        import time
+
+        from lingolay.tts.game_audio import GameAudioCapture
+        capture = GameAudioCapture()
+        ok = capture.start()
+        time.sleep(0.5)
+        detail = f'capturing ({len(capture.recent(0.5))} samples in 0.5 s)' if ok else capture.error
+        capture.stop()
+        return ok, detail
+
     def ducking():
         from lingolay.tts import ducking as d
         return d.PYCAW_AVAILABLE, d.PYCAW_IMPORT_ERROR or 'ok'
@@ -248,6 +259,7 @@ def _selftest():
     check('Audio ducking (pycaw)', ducking, required=False)
     check('Dubbing (piper + pygame)', tts, required=False)
     check('Japanese voice (pyopenjtalk)', japanese_voice, required=sys.platform == 'win32')
+    check('System audio capture', system_audio, required=False)
     failed = False
     lines = []
     for name, ok, required, detail in results:
