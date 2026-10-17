@@ -20,6 +20,8 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 
 [**⬇ Download for Windows**](https://github.com/keremss7/lingolay/releases/latest) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Contributing](#-contributing) · [🇹🇷 Türkçe](docs/README.tr.md) · [🇷🇺 Русский](docs/README.ru.md)
 
+> 🆕 **New in v2.3: speaker‑aware dubbing.** A woman's line is dubbed with a female voice, a man's with a male voice, automatically and offline.
+
 <img src="docs/images/demo.png" alt="Lingolay translating a subtitle in real time" width="820">
 
 </div>
@@ -34,6 +36,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 | 🌍 **21 languages, any direction** | English, Japanese, Chinese, Korean, Russian, German, French, Spanish, Portuguese, Italian, Dutch, Polish, Ukrainian, Arabic, Turkish, **Hindi, Urdu, Bengali, Vietnamese, Indonesian, Thai**. Pick *on‑screen* → *target* freely. |
 | 🎮 **Built for games** | Game mode (auto‑borderless), click‑through always‑on‑top overlay, global hotkeys that work in‑game, white‑text subtitle isolation. |
 | 🗣️ **Neural voice dubbing** | Hear translations read aloud with [Piper](https://github.com/rhasspy/piper) voices — also offline — while other apps are automatically ducked. Available for every target language except Thai (for now). |
+| 🎭 **Speaker‑aware dubbing** *(new, experimental)* | Lingolay listens to the game or video, hears whether a **man or a woman** is speaking and dubs each line with a **matching voice**, in all 20 dubbed languages. Fully offline, and Lingolay's own voice is never picked up. Turn it on under *Voice dubbing → Match the speaker's voice* (Windows 10 2004+). |
 | 🧠 **Smart subtitle handling** | Waits for typewriter‑style subtitles to finish, ignores OCR flicker, never re‑translates a line it already showed, and never reads its own overlay. |
 | ⚡ **Fast** | ~150–250 ms per sentence on a regular CPU, faster with an NVIDIA GPU. Adaptive capture rate keeps CPU usage low. |
 | 🧩 **Optional DeepL** | Bring your own free DeepL API key for maximum quality with zero GPU load. |
@@ -196,7 +199,7 @@ the CTranslate2 conversions are by [JustFrederik](https://huggingface.co/JustFre
 
 ## 🙏 Acknowledgements
 
-[Meta AI — NLLB‑200](https://github.com/facebookresearch/fairseq/tree/nllb) · [CTranslate2](https://github.com/OpenNMT/CTranslate2) · [Piper](https://github.com/rhasspy/piper) · [PySide6 / Qt](https://www.qt.io/qt-for-python) · [DXcam](https://github.com/ra1nty/DXcam) · [python-mss](https://github.com/BoboTiG/python-mss) · [OpenCV](https://opencv.org/) · [pycaw](https://github.com/AndreMiras/pycaw)
+[Meta AI — NLLB‑200](https://github.com/facebookresearch/fairseq/tree/nllb) · [CTranslate2](https://github.com/OpenNMT/CTranslate2) · [Piper](https://github.com/rhasspy/piper) · [PySide6 / Qt](https://www.qt.io/qt-for-python) · [DXcam](https://github.com/ra1nty/DXcam) · [python-mss](https://github.com/BoboTiG/python-mss) · [OpenCV](https://opencv.org/) · [pycaw](https://github.com/AndreMiras/pycaw) · [voice-gender-classifier](https://huggingface.co/JaesungHuh/voice-gender-classifier) (MIT) · [Praat](https://www.fon.hum.uva.nl/praat/) / [Parselmouth](https://github.com/YannickJadoul/Parselmouth)
 
 <div align="center">
 

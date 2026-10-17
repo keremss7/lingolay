@@ -66,12 +66,16 @@ def _run_cli(argv):
     parser.add_argument('--selftest', action='store_true', help='check that all components load (used by CI on the packaged app)')
     parser.add_argument('--list-models', action='store_true', help='list downloadable models/voices and their status')
     parser.add_argument('--download', nargs='+', metavar='MODEL', help='download models: fast, quality, voice:<lang> (e.g. voice:tr)')
+    parser.add_argument('--listen-test', nargs='?', const=15, type=int, metavar='SECONDS',
+                        help='listen to system audio (without Lingolay) and report level and speaker gender')
     args, _qt_args = parser.parse_known_args(argv)
     if args.version:
         _print(f'{__app_name__} {__version__}')
         return 0
     if args.selftest:
         return _selftest()
+    if args.listen_test:
+        return _listen_test(args.listen_test)
     if not (args.list_models or args.download):
         return None
 
@@ -112,6 +116,66 @@ def _run_cli(argv):
             _print(f'  ✗ failed: {e}')
             exit_code = 1
     return exit_code
+
+
+def _listen_test(seconds):
+    """Capture system audio (excluding Lingolay) and report level and detected speaker gender per second."""
+    import time
+
+    import numpy as np
+
+    from lingolay.core.paths import LOG_FILE
+    from lingolay.models.manager import get_model_manager
+    from lingolay.tts.game_audio import GameAudioCapture, is_supported
+
+    report_path = LOG_FILE.parent / 'listen-test.txt'
+    lines = [f'Lingolay {__version__} listen test ({seconds} s). Play a game or video with people talking.', '']
+
+    def finish(code):
+        report = '\n'.join(lines)
+        _print(report)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(report + '\n', encoding='utf-8')
+        if sys.platform == 'win32' and getattr(sys, 'frozen', False):
+            os.startfile(report_path)  # windowed build has no console
+        return code
+
+    if not is_supported():
+        lines.append('FAIL  Windows 10 version 2004 or later is required.')
+        return finish(1)
+    detector = None
+    manager = get_model_manager()
+    try:
+        if not manager.is_installed('gender'):
+            lines.append('Downloading the speaker gender model (~59 MB)...')
+            manager.download('gender')
+        from lingolay.tts.speaker_gender import SpeakerGenderDetector
+        detector = SpeakerGenderDetector(manager.get_model_path('gender') / 'gender_ecapa.onnx')
+    except Exception as e:
+        lines.append(f'WARN  Gender model unavailable: {e}')
+    capture = GameAudioCapture()
+    if not capture.start():
+        lines.append(f'FAIL  Audio capture could not start: {capture.error}')
+        return finish(1)
+    lines.append('OK    Audio capture started')
+    try:
+        for second in range(1, seconds + 1):
+            time.sleep(1.0)
+            if capture.error:
+                lines.append(f'FAIL  Capture stopped: {capture.error}')
+                return finish(1)
+            last = capture.recent(1.0)
+            level = 20 * np.log10(float(np.sqrt(np.mean(last ** 2))) + 1e-9) if len(last) else -180
+            verdict = ''
+            if detector is not None:
+                start = time.perf_counter()
+                gender, confidence = detector.classify(capture.recent(2.0))
+                verdict = f'  speaker: {gender or "not sure"} ({confidence:.2f}, {(time.perf_counter() - start) * 1000:.0f} ms)'
+            lines.append(f'{second:3d}s  level {level:6.1f} dB{verdict}')
+    finally:
+        capture.stop()
+    lines += ['', 'Tip: -60 dB or lower means silence. Lingolay\'s own dubbing is never captured.']
+    return finish(0)
 
 
 def _selftest():
@@ -167,6 +231,21 @@ def _selftest():
         phonemes = JapanesePhonemizer().phonemize('こんにちは')
         return bool(phonemes and phonemes[0]), 'ok'
 
+    def voice_transform():
+        from lingolay.tts import voice_transform as vt
+        return vt.PARSELMOUTH_AVAILABLE, 'ok' if vt.PARSELMOUTH_AVAILABLE else 'praat-parselmouth is not installed'
+
+    def system_audio():
+        import time
+
+        from lingolay.tts.game_audio import GameAudioCapture
+        capture = GameAudioCapture()
+        ok = capture.start()
+        time.sleep(0.5)
+        detail = f'capturing ({len(capture.recent(0.5))} samples in 0.5 s)' if ok else capture.error
+        capture.stop()
+        return ok, detail
+
     def ducking():
         from lingolay.tts import ducking as d
         return d.PYCAW_AVAILABLE, d.PYCAW_IMPORT_ERROR or 'ok'
@@ -184,6 +263,8 @@ def _selftest():
     check('Audio ducking (pycaw)', ducking, required=False)
     check('Dubbing (piper + pygame)', tts, required=False)
     check('Japanese voice (pyopenjtalk)', japanese_voice, required=sys.platform == 'win32')
+    check('Voice transform (parselmouth)', voice_transform, required=False)
+    check('System audio capture', system_audio, required=False)
     failed = False
     lines = []
     for name, ok, required, detail in results:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lingolay"
-version = "2.2.1"
+version = "2.3.0"
 description = "Real-time, offline screen translator for games & videos — OCR + NLLB-200 + subtitle overlay + neural voice dubbing."
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-tts = ["piper-tts>=1.3", "pygame>=2.5", "pyopenjtalk-plus>=0.4,<1"]  # pyopenjtalk: Japanese voice
+tts = ["piper-tts>=1.3", "pygame>=2.5", "pyopenjtalk-plus>=0.4,<1", "praat-parselmouth>=0.4"]  # pyopenjtalk: Japanese voice; parselmouth: voice gender transform
 deepl = ["deepl>=1.18"]
 all = ["lingolay[tts,deepl]"]
 dev = ["lingolay[all]", "pytest>=8", "pytest-qt>=4.4", "ruff>=0.6", "pyinstaller>=6.6"]

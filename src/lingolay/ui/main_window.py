@@ -380,6 +380,7 @@ class MainWindow(QMainWindow):
         self._current_profile = None
         self._borderless_state = None
         self._tts_engine = None
+        self._speaker_matcher = None
         self._tts_timer = QTimer(self)
         self._tts_timer.setInterval(25)
         self._tts_timer.timeout.connect(self._poll_tts_playback)
@@ -900,6 +901,15 @@ class MainWindow(QMainWindow):
         self._chk_smooth.setChecked(tts.smooth_flow)
         self._chk_smooth.setToolTip(t('Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.'))
         card.add_widget(self._chk_smooth)
+        from lingolay.tts.game_audio import is_supported as speaker_match_supported
+        self._chk_match = QCheckBox(t("Match the speaker's voice (experimental)"))
+        self._chk_match.setChecked(tts.match_speaker and speaker_match_supported())
+        self._chk_match.setToolTip(t('Listens to the game or video (nothing is recorded), detects whether a man or a woman is speaking '
+                                     'and uses a matching voice. Downloads a ~60 MB model and the extra voices on first use.'))
+        if not speaker_match_supported():
+            self._chk_match.setEnabled(False)
+            self._chk_match.setToolTip(t('Requires Windows 10 version 2004 or later.'))
+        card.add_widget(self._chk_match)
 
         self._sld_tts_volume, self._lbl_tts_vol_val = self._slider_row(card, t('Volume:'), 0, 100, tts.volume, lambda v: f'%{v}')
         self._sld_tts_gain, self._lbl_tts_gain_val = self._slider_row(card, t('Boost:'), 100, 400, tts.gain, lambda v: f'{v / 100:.1f}x')
@@ -1137,6 +1147,7 @@ class MainWindow(QMainWindow):
         self._update_pair_label()
         if self._tts_engine:
             self._tts_timer.stop()
+            self._stop_speaker_matching()
             self._tts_engine.disable()
             self._tts_engine = None
             if self._btn_tts.isChecked():
@@ -1158,10 +1169,13 @@ class MainWindow(QMainWindow):
         tts.duck_enabled = self._chk_duck.isChecked()
         tts.duck_level = self._sld_duck.value()
         tts.smooth_flow = self._chk_smooth.isChecked()
+        tts.match_speaker = self._chk_match.isChecked()
         save_settings()
         if self._tts_engine:
             self._tts_engine.configure(tts.speed, tts.volume / 100.0, tts.gain / 100.0, duck_enabled=tts.duck_enabled,
                                        duck_level=tts.duck_level / 100.0, smooth=tts.smooth_flow)
+            if self._tts_engine.is_enabled:
+                self._update_speaker_matching()
         self._sb.showMessage(t('Dubbing settings saved.'), 3000)
 
     def _set_tts_checked(self, checked):
@@ -1173,6 +1187,7 @@ class MainWindow(QMainWindow):
         """Toggle dubbing — the engine and voice model are prepared on first use."""
         if not checked:
             self._tts_timer.stop()
+            self._stop_speaker_matching()
             if self._tts_engine:
                 self._tts_engine.disable()
             self._sb.showMessage(t('Dubbing off.'), 3000)
@@ -1208,6 +1223,55 @@ class MainWindow(QMainWindow):
         self._tts_engine.enable()
         self._tts_timer.start()
         self._sb.showMessage(t('Dubbing on — translations will be read aloud.'), 4000)
+        self._update_speaker_matching()
+
+    def _stop_speaker_matching(self):
+        if self._tts_engine:
+            self._tts_engine.set_speaker_matching(None, None)
+        if self._speaker_matcher:
+            self._speaker_matcher.stop()
+            self._speaker_matcher = None
+
+    def _update_speaker_matching(self):
+        """Turn "match the speaker's voice" on or off for the running dubbing, downloading what it needs."""
+        from lingolay.models.manager import get_model_manager
+        from lingolay.models.manifest import gender_voices_for, get_model
+        from lingolay.tts.speaker_match import SpeakerMatcher
+        s = get_settings()
+        voices = gender_voices_for(s.target_lang) if s.tts.match_speaker else None
+        if not voices or not SpeakerMatcher.supported() or not self._tts_engine:
+            self._stop_speaker_matching()
+            return
+        manager = get_model_manager()
+        missing = [m for m in ['gender', *sorted({v.voice for v in voices.values()})] if not manager.is_installed(m)]
+        if missing:
+            size = sum(get_model(m).approx_size_mb for m in missing)
+            reply = QMessageBox.question(self, t('Download voice'),
+                                         t("Matching the speaker's voice needs the speaker model and the voices for this language (~{size} MB). Download them now?", size=size))
+            if reply != QMessageBox.StandardButton.Yes:
+                self._set_match_checked(False)
+                return
+            from lingolay.ui.model_download_dialog import ModelDownloadDialog
+            dlg = ModelDownloadDialog(missing, parent=self, title=t('Download voice'))
+            dlg.exec()
+            if not dlg.succeeded:
+                self._set_match_checked(False)
+                return
+        if self._speaker_matcher is None:
+            matcher = SpeakerMatcher(manager.get_model_path('gender') / 'gender_ecapa.onnx')
+            if not matcher.start():
+                self._sb.showMessage(t("Speaker matching could not start: {error}", error=matcher.error), 8000)
+                self._set_match_checked(False)
+                return
+            self._speaker_matcher = matcher
+        self._tts_engine.set_speaker_matching(self._speaker_matcher, voices)
+        self._sb.showMessage(t("Matching the speaker's voice."), 4000)
+
+    def _set_match_checked(self, checked):
+        self._chk_match.setChecked(checked)
+        get_settings().tts.match_speaker = checked
+        save_settings()
+        self._stop_speaker_matching()
 
     def _poll_tts_playback(self):
         if self._tts_engine:
@@ -1613,6 +1677,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self._tts_timer.stop()
+        self._stop_speaker_matching()
         if self._tts_engine:
             self._tts_engine.disable()
         self._hotkeys.stop()

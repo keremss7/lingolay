@@ -247,5 +247,11 @@
   "🎯 Drag to select the subtitle area  |  ESC: cancel": "🎯 Выделите область субтитров  |  ESC: отмена",
   "🔍 OCR preview": "🔍 Предпросмотр OCR",
   "Natural flow (finish sentences instead of cutting them off)": "Естественный поток (договаривает фразы, не обрывая их)",
-  "Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.": "Даёт договорить каждую фразу, добавляет короткие паузы между предложениями и немного ускоряется, чтобы догнать. Отключите, чтобы вернуть прежнее поведение."
+  "Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.": "Даёт договорить каждую фразу, добавляет короткие паузы между предложениями и немного ускоряется, чтобы догнать. Отключите, чтобы вернуть прежнее поведение.",
+  "Match the speaker's voice (experimental)": "Подбирать голос под говорящего (экспериментально)",
+  "Listens to the game or video (nothing is recorded), detects whether a man or a woman is speaking and uses a matching voice. Downloads a ~60 MB model and the extra voices on first use.": "Слушает игру или видео (ничего не записывается), определяет, говорит мужчина или женщина, и использует подходящий голос. При первом использовании скачивается модель (~60 МБ) и дополнительные голоса.",
+  "Requires Windows 10 version 2004 or later.": "Требуется Windows 10 версии 2004 или новее.",
+  "Matching the speaker's voice needs the speaker model and the voices for this language (~{size} MB). Download them now?": "Для подбора голоса нужны модель распознавания говорящего и голоса для этого языка (~{size} МБ). Скачать сейчас?",
+  "Speaker matching could not start: {error}": "Не удалось запустить подбор голоса: {error}",
+  "Matching the speaker's voice.": "Голос подбирается под говорящего."
 }

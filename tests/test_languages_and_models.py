@@ -4,7 +4,7 @@ import string
 
 from lingolay.i18n import LOCALES_DIR
 from lingolay.languages import LANGUAGES, display_name, get_language
-from lingolay.models.manifest import MODELS, VOICE_TABLE, VOICES, get_model, voice_for_language
+from lingolay.models.manifest import AUX_MODELS, GENDER_VOICES, MODELS, VOICE_TABLE, VOICES, get_model, voice_for_language
 
 
 def test_every_language_has_codes():
@@ -26,11 +26,11 @@ TRANSLATION_ONLY = {'th'}
 def test_every_language_has_a_dubbing_voice():
     for code in LANGUAGES:
         assert bool(voice_for_language(code)) == (code not in TRANSLATION_ONLY), code
-    assert set(VOICES) == {v for v, _ in VOICE_TABLE.values()}
+    assert {v for v, _ in VOICE_TABLE.values()} <= set(VOICES)
 
 
 def test_model_manifest_is_pinned_and_verified():
-    for info in list(MODELS.values()) + list(VOICES.values()):
+    for info in list(MODELS.values()) + list(VOICES.values()) + list(AUX_MODELS.values()):
         assert re.fullmatch(r'[0-9a-f]{40}', info.revision)
         big = [f for f in info.files if f.size > 1_000_000]
         assert big and all(f.sha256 and len(f.sha256) == 64 for f in big)
@@ -61,3 +61,19 @@ def test_system_locale_matches_regional_locale_files(monkeypatch):
     assert i18n.match_language('pt_PT') == 'pt-BR'
     assert i18n.match_language('tr_TR') == 'tr'
     assert i18n.match_language('de_DE') == 'en'
+
+
+def test_gender_voices_cover_both_genders_with_downloadable_voices():
+    for code, voices in GENDER_VOICES.items():
+        assert code in LANGUAGES, code
+        assert set(voices) == {'female', 'male'}, code
+        assert voice_for_language(code) in {v.voice for v in voices.values()}, code  # default voice stays in use
+        for gender, gv in voices.items():
+            assert gv.voice in VOICES, (code, gv.voice)
+            assert gv.transform in (None, 'female', 'male'), (code, gv)
+            assert gv.transform in (None, gender), (code, gender, gv)  # a transform always moves toward its gender
+
+
+def test_aux_model_downloads_from_a_pinned_release():
+    info = get_model('gender')
+    assert info.url_for(info.files[0]) == 'https://github.com/keremss7/lingolay/releases/download/models-gender-v1/gender_ecapa.onnx'

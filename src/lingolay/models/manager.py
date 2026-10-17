@@ -92,7 +92,7 @@ class ModelManager:
         if not (install_dir / SENTINEL_FILE).exists():
             return None
         from lingolay.models.manifest import get_model
-        if get_model(model_id).kind == 'voice':
+        if get_model(model_id).kind != 'translation':
             return install_dir
         return _find_model_bin_dir(install_dir)
 

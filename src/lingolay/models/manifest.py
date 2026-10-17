@@ -41,12 +41,15 @@ class ModelInfo:
     files: tuple[RemoteFile, ...] = field(default_factory=tuple)
     license: str = ''
     homepage: str = ''
+    base_url: str = ''             # download from here instead of the Hugging Face repo
 
     @property
     def approx_size_mb(self):
         return round(sum(f.size for f in self.files) / (1024 * 1024))
 
     def url_for(self, remote_file):
+        if self.base_url:
+            return f'{self.base_url}/{remote_file.path}'
         return f'{HF_ENDPOINT}/{self.repo}/resolve/{self.revision}/{remote_file.path}'
 
 
@@ -112,6 +115,58 @@ VOICE_TABLE = {
     'id': ('id_ID-news_tts-medium', (RemoteFile('id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx', 62950044, 'ed8f02aa593f7af6b19acbdb8142e0da0dd72f46194eb33d38e0eb10a52597e8'), RemoteFile('id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx.json', 5050))),
 }
 
+# Alternative-gender voices used by "match the speaker's voice" dubbing (experimental)
+_EXTRA_VOICES = (
+    ('en_US-ryan-medium', (RemoteFile('en/en_US/ryan/medium/en_US-ryan-medium.onnx', 63201294, 'abf4c274862564ed647ba0d2c47f8ee7c9b717d27bdad9219100eb310db4047a'), RemoteFile('en/en_US/ryan/medium/en_US-ryan-medium.onnx.json', 4883))),
+    ('de_DE-ramona-low', (RemoteFile('de/de_DE/ramona/low/de_DE-ramona-low.onnx', 63104526, 'a1068592532aad8c49bf3d1a01b8749c11d7dba726689ee28ad64e7b627ae4c5'), RemoteFile('de/de_DE/ramona/low/de_DE-ramona-low.onnx.json', 4157))),
+    ('fr_FR-tom-medium', (RemoteFile('fr/fr_FR/tom/medium/fr_FR-tom-medium.onnx', 63511038, 'bf65074ccdeeeeaa832e75edb1c0a513c01c9a972bdf085ff8a6e71ea234fd41'), RemoteFile('fr/fr_FR/tom/medium/fr_FR-tom-medium.onnx.json', 4959))),
+    ('es_ES-sharvard-medium', (RemoteFile('es/es_ES/sharvard/medium/es_ES-sharvard-medium.onnx', 76733615, '40febfb1679c69a4505ff311dc136e121e3419a13a290ef264fdf43ddedd0fb1'), RemoteFile('es/es_ES/sharvard/medium/es_ES-sharvard-medium.onnx.json', 4903))),
+    ('it_IT-riccardo-x_low', (RemoteFile('it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx', 28130791, '1368de15f123275a7ef951c9e5e30be0f58a032daa14a0da44037443c1d1d21b'), RemoteFile('it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx.json', 4161))),
+    ('pl_PL-gosia-medium', (RemoteFile('pl/pl_PL/gosia/medium/pl_PL-gosia-medium.onnx', 63201294, '38f66464240ed74f186e6b7dc13c6e3b22e023426299f25c2b3cc9dfa9373fbc'), RemoteFile('pl/pl_PL/gosia/medium/pl_PL-gosia-medium.onnx.json', 4814))),
+    ('ru_RU-ruslan-medium', (RemoteFile('ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx', 63201294, '72a5f88e0b20928064eb45d88e1daa21f8af62d18613580d32cbb4aed48dcf7f'), RemoteFile('ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx.json', 4882))),
+    ('hi_IN-priyamvada-medium', (RemoteFile('hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx', 63516050, 'aa63bcf2cd493b55a450f280e23cf77f03afc9af7015e6e5acd43b652f166c88'), RemoteFile('hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx.json', 4973))),
+    ('ur_PK-aegis_female-medium', (RemoteFile('ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx', 63515589, '3ec306035cfd0bbc22342fee5890450708a16dd231809522731678aa583c961f'), RemoteFile('ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx.json', 5236))),
+)
+
+
+@dataclass(frozen=True)
+class GenderVoice:
+    voice: str                     # Piper voice id
+    speaker: int | None = None     # speaker id inside a multi-speaker voice
+    transform: str | None = None   # 'female' / 'male': shift the voice's pitch and formants
+
+
+_F, _M = 'female', 'male'
+# Measured with a pitch tracker and a gender classifier (see docs); missing genders use a transformed voice
+GENDER_VOICES = {
+    'en': {_F: GenderVoice('en_US-lessac-medium'), _M: GenderVoice('en_US-ryan-medium')},
+    'tr': {_M: GenderVoice('tr_TR-dfki-medium'), _F: GenderVoice('tr_TR-dfki-medium', transform=_F)},
+    'de': {_M: GenderVoice('de_DE-thorsten-medium'), _F: GenderVoice('de_DE-ramona-low')},
+    'fr': {_F: GenderVoice('fr_FR-siwis-medium'), _M: GenderVoice('fr_FR-tom-medium')},
+    'es': {_M: GenderVoice('es_ES-davefx-medium'), _F: GenderVoice('es_ES-sharvard-medium', speaker=1)},
+    'pt': {_M: GenderVoice('pt_BR-faber-medium'), _F: GenderVoice('pt_BR-faber-medium', transform=_F)},
+    'it': {_F: GenderVoice('it_IT-paola-medium'), _M: GenderVoice('it_IT-riccardo-x_low')},
+    'nl': {_M: GenderVoice('nl_NL-mls-medium', speaker=0), _F: GenderVoice('nl_NL-mls-medium', speaker=1)},
+    'pl': {_M: GenderVoice('pl_PL-darkman-medium'), _F: GenderVoice('pl_PL-gosia-medium')},
+    'ru': {_F: GenderVoice('ru_RU-irina-medium'), _M: GenderVoice('ru_RU-ruslan-medium')},
+    'uk': {_F: GenderVoice('uk_UA-ukrainian_tts-medium', speaker=0), _M: GenderVoice('uk_UA-ukrainian_tts-medium', speaker=1)},
+    'ar': {_M: GenderVoice('ar_JO-kareem-medium'), _F: GenderVoice('ar_JO-kareem-medium', transform=_F)},
+    'zh': {_F: GenderVoice('zh_CN-huayan-medium'), _M: GenderVoice('zh_CN-huayan-medium', transform=_M)},
+    'ja': {_F: GenderVoice('ja_JP-hi_fi_captain-medium'), _M: GenderVoice('ja_JP-hi_fi_captain-medium', transform=_M)},
+    'ko': {_F: GenderVoice('ko_KR-kss-medium'), _M: GenderVoice('ko_KR-kss-medium', transform=_M)},
+    'hi': {_M: GenderVoice('hi_IN-pratham-medium'), _F: GenderVoice('hi_IN-priyamvada-medium')},
+    'ur': {_M: GenderVoice('ur_PK-fasih-medium'), _F: GenderVoice('ur_PK-aegis_female-medium')},
+    'bn': {_M: GenderVoice('bn_BD-google-medium', speaker=0), _F: GenderVoice('bn_BD-google-medium', speaker=12)},
+    'vi': {_F: GenderVoice('vi_VN-vais1000-medium'), _M: GenderVoice('vi_VN-vais1000-medium', transform=_M)},
+    'id': {_F: GenderVoice('id_ID-news_tts-medium'), _M: GenderVoice('id_ID-news_tts-medium', transform=_M)},
+}
+
+
+def gender_voices_for(lang_code):
+    """{'female': GenderVoice, 'male': GenderVoice} for a target language, or None."""
+    return GENDER_VOICES.get(lang_code)
+
+
 VOICES = {
     voice_id: ModelInfo(
         id=voice_id,
@@ -124,7 +179,7 @@ VOICES = {
         license='See model card (Piper voices)',
         homepage='https://huggingface.co/rhasspy/piper-voices',
     )
-    for voice_id, files in VOICE_TABLE.values()
+    for voice_id, files in (*VOICE_TABLE.values(), *_EXTRA_VOICES)
 }
 
 
@@ -134,7 +189,23 @@ def voice_for_language(lang_code):
     return entry[0] if entry else None
 
 
-ALL_ASSETS = {**MODELS, **VOICES}
+# Helper models downloaded on demand (not translation models)
+AUX_MODELS = {
+    'gender': ModelInfo(
+        id='gender',
+        kind='aux',
+        display_name='Speaker gender model',
+        description='Detects whether the person speaking is a man or a woman.',
+        repo='keremss7/lingolay',
+        revision='955e874e3717d89203420436dca9727053a75230',
+        files=(RemoteFile('gender_ecapa.onnx', 61926021, 'cbc00480e4b7bfc5293e2ef6b442cbd98efe173787127ed42d9a7444a50f9c64'),),
+        license='MIT (JaesungHuh/voice-gender-classifier)',
+        homepage='https://huggingface.co/JaesungHuh/voice-gender-classifier',
+        base_url='https://github.com/keremss7/lingolay/releases/download/models-gender-v1',
+    ),
+}
+
+ALL_ASSETS = {**MODELS, **VOICES, **AUX_MODELS}
 
 
 def get_model(model_id):
