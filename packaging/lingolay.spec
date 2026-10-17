@@ -23,14 +23,15 @@ for pkg in ('ctranslate2', 'tokenizers', 'onnxruntime'):
         binaries += collect_dynamic_libs(pkg)
     except Exception:
         pass
-for pkg in ('piper', 'certifi'):
+# pyopenjtalk ships the OpenJTalk dictionary the Japanese voice needs
+for pkg in ('piper', 'certifi', 'pyopenjtalk'):
     try:
         datas += collect_data_files(pkg)
     except Exception:
         pass
 if sys.platform == 'win32':
     hiddenimports += collect_submodules('winrt') + collect_submodules('pycaw') + collect_submodules('comtypes') + ['dxcam']
-hiddenimports += collect_submodules('piper') + ['pygame', 'deepl', 'mss']
+hiddenimports += collect_submodules('piper') + collect_submodules('pyopenjtalk') + ['pygame', 'deepl', 'mss']
 
 a = Analysis(
     [str(ROOT / 'packaging' / 'launcher.py')],

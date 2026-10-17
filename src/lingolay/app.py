@@ -158,6 +158,12 @@ def _selftest():
         from lingolay.tts import fast_dubbing, piper_engine
         return piper_engine.PIPER_AVAILABLE and fast_dubbing.PYGAME_AVAILABLE, piper_engine.PIPER_IMPORT_ERROR or 'ok'
 
+    def japanese_voice():
+        # Piper's Japanese voice needs pyopenjtalk and its bundled dictionary
+        from piper.phonemize_japanese import JapanesePhonemizer
+        phonemes = JapanesePhonemizer().phonemize('こんにちは')
+        return bool(phonemes and phonemes[0]), 'ok'
+
     def ducking():
         from lingolay.tts import ducking as d
         return d.PYCAW_AVAILABLE, d.PYCAW_IMPORT_ERROR or 'ok'
@@ -174,6 +180,7 @@ def _selftest():
     check('Windows OCR', win_ocr, required=sys.platform == 'win32')
     check('Audio ducking (pycaw)', ducking, required=False)
     check('Dubbing (piper + pygame)', tts, required=False)
+    check('Japanese voice (pyopenjtalk)', japanese_voice, required=sys.platform == 'win32')
     failed = False
     lines = []
     for name, ok, required, detail in results:
