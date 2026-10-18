@@ -253,5 +253,12 @@
   "Requires Windows 10 version 2004 or later.": "Windows 10 sürüm 2004 veya üstü gerekir.",
   "Matching the speaker's voice needs the speaker model and the voices for this language (~{size} MB). Download them now?": "Konuşanın sesine uydurmak için konuşmacı modeli ve bu dilin sesleri gerekiyor (~{size} MB). Şimdi indirilsin mi?",
   "Speaker matching could not start: {error}": "Konuşmacı eşleştirme başlatılamadı: {error}",
-  "Matching the speaker's voice.": "Konuşanın sesine uyduruluyor."
+  "Matching the speaker's voice.": "Konuşanın sesine uyduruluyor.",
+  "Speaker-aware voice": "Konuşana göre ses",
+  "NEW": "YENİ",
+  "A woman's line in a female voice, a man's in a male voice — automatically.": "Kadın konuşunca kadın, erkek konuşunca erkek sesiyle — otomatik.",
+  "Listening…": "Dinliyor…",
+  "Female voice": "Kadın sesi",
+  "Male voice": "Erkek sesi",
+  "Default voice": "Varsayılan ses"
 }

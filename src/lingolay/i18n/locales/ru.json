@@ -253,5 +253,12 @@
   "Requires Windows 10 version 2004 or later.": "Требуется Windows 10 версии 2004 или новее.",
   "Matching the speaker's voice needs the speaker model and the voices for this language (~{size} MB). Download them now?": "Для подбора голоса нужны модель распознавания говорящего и голоса для этого языка (~{size} МБ). Скачать сейчас?",
   "Speaker matching could not start: {error}": "Не удалось запустить подбор голоса: {error}",
-  "Matching the speaker's voice.": "Голос подбирается под говорящего."
+  "Matching the speaker's voice.": "Голос подбирается под говорящего.",
+  "Speaker-aware voice": "Голос по говорящему",
+  "NEW": "НОВОЕ",
+  "A woman's line in a female voice, a man's in a male voice — automatically.": "Женские реплики — женским голосом, мужские — мужским, автоматически.",
+  "Listening…": "Слушаю…",
+  "Female voice": "Женский голос",
+  "Male voice": "Мужской голос",
+  "Default voice": "Голос по умолчанию"
 }

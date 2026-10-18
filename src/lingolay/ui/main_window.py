@@ -682,7 +682,43 @@ class MainWindow(QMainWindow):
         toggle_row.addWidget(self._btn_overlay)
         toggle_row.addWidget(self._btn_tts)
         card.add_row(toggle_row)
+        # The speaker-aware voice sits right under Dubbing, which it builds on
+        from lingolay.tts.game_audio import is_supported as speaker_match_supported
+        from lingolay.ui.feature_tile import SpeakerVoiceTile
+        tts = get_settings().tts
+        self._speaker_tile = SpeakerVoiceTile()
+        self._speaker_tile.set_supported(speaker_match_supported())
+        self._speaker_tile.set_checked(tts.match_speaker and speaker_match_supported())
+        self._speaker_tile.set_new(not tts.match_speaker_seen)
+        self._speaker_tile.toggled.connect(self._on_speaker_tile_toggled)
+        card.add_spacing(2)
+        card.add_widget(self._speaker_tile)
+        self._speaker_status_timer = QTimer(self)
+        self._speaker_status_timer.setInterval(400)
+        self._speaker_status_timer.timeout.connect(self._refresh_speaker_status)
+        self._speaker_status_timer.start()
         return card
+
+    def _on_speaker_tile_toggled(self, checked):
+        """One switch does it all: turning it on also turns dubbing on."""
+        s = get_settings()
+        s.tts.match_speaker = checked
+        if checked:
+            s.tts.match_speaker_seen = True
+            self._speaker_tile.set_new(False)
+        save_settings()
+        if hasattr(self, '_chk_match'):
+            self._chk_match.setChecked(checked)
+        if not checked:
+            self._stop_speaker_matching()
+        elif not self._btn_tts.isChecked():
+            self._btn_tts.setChecked(True)  # starts dubbing, which then starts speaker matching
+        elif self._tts_engine and self._tts_engine.is_enabled:
+            self._update_speaker_matching()
+
+    def _refresh_speaker_status(self):
+        active = self._speaker_matcher is not None and self._tts_engine is not None and self._tts_engine.is_enabled
+        self._speaker_tile.set_status(self._speaker_matcher.ui_state() if active else None)
 
     def _make_metrics_card(self):
         card = SectionCard(t('Performance'))
@@ -1170,6 +1206,7 @@ class MainWindow(QMainWindow):
         tts.duck_level = self._sld_duck.value()
         tts.smooth_flow = self._chk_smooth.isChecked()
         tts.match_speaker = self._chk_match.isChecked()
+        self._speaker_tile.set_checked(tts.match_speaker)
         save_settings()
         if self._tts_engine:
             self._tts_engine.configure(tts.speed, tts.volume / 100.0, tts.gain / 100.0, duck_enabled=tts.duck_enabled,
@@ -1269,6 +1306,7 @@ class MainWindow(QMainWindow):
 
     def _set_match_checked(self, checked):
         self._chk_match.setChecked(checked)
+        self._speaker_tile.set_checked(checked)
         get_settings().tts.match_speaker = checked
         save_settings()
         self._stop_speaker_matching()

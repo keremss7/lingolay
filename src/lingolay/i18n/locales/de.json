@@ -253,5 +253,12 @@
   "Requires Windows 10 version 2004 or later.": "Erfordert Windows 10 Version 2004 oder neuer.",
   "Matching the speaker's voice needs the speaker model and the voices for this language (~{size} MB). Download them now?": "Für die Sprecheranpassung werden das Sprechermodell und die Stimmen für diese Sprache benötigt (~{size} MB). Jetzt herunterladen?",
   "Speaker matching could not start: {error}": "Sprecheranpassung konnte nicht gestartet werden: {error}",
-  "Matching the speaker's voice.": "Stimme wird an den Sprecher angepasst."
+  "Matching the speaker's voice.": "Stimme wird an den Sprecher angepasst.",
+  "Speaker-aware voice": "Stimme nach Sprecher",
+  "NEW": "NEU",
+  "A woman's line in a female voice, a man's in a male voice — automatically.": "Frauen mit weiblicher, Männer mit männlicher Stimme — automatisch.",
+  "Listening…": "Hört zu…",
+  "Female voice": "Frauenstimme",
+  "Male voice": "Männerstimme",
+  "Default voice": "Standardstimme"
 }
