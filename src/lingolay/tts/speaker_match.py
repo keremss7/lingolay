@@ -21,7 +21,8 @@ class SpeakerMatcher:
         self._capture = GameAudioCapture()
         self._detector = None
         self._lock = threading.Lock()
-        self._last = None          # (gender, time)
+        self._last = None          # (gender, time) of the last confident decision
+        self.last_used = None      # ('female' | 'male' | 'default', time) of the last line, for the UI
         self.error = None
 
     @staticmethod
@@ -62,5 +63,13 @@ class SpeakerMatcher:
                 self._last = (gender, now)
             elif self._last and now - self._last[1] < KEEP_LAST_SECONDS:
                 gender = self._last[0]
+        self.last_used = (gender or 'default', now)
         logger.debug('[SpeakerMatch] speaker=%s (%.2f)', gender, confidence)
         return gender
+
+    def ui_state(self, max_age=8.0):
+        """'listening' until a line was voiced recently, then the voice that was used."""
+        last = self.last_used
+        if not last or time.monotonic() - last[1] > max_age:
+            return 'listening'
+        return last[0]
