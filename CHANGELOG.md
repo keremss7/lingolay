@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.3.1] — 2026-10-18
+
+### Changed
+- **Speaker-aware voice is now on the home page**, right under Dubbing, instead of at the bottom of the Translation page. One switch turns it (and dubbing) on, and a live label shows which voice is speaking: female, male or default ([#20](https://github.com/keremss7/lingolay/pull/20)).
+
 ## [2.3.0] — 2026-10-17
 
 ### Added
