@@ -126,7 +126,22 @@ _EXTRA_VOICES = (
     ('ru_RU-ruslan-medium', (RemoteFile('ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx', 63201294, '72a5f88e0b20928064eb45d88e1daa21f8af62d18613580d32cbb4aed48dcf7f'), RemoteFile('ru/ru_RU/ruslan/medium/ru_RU-ruslan-medium.onnx.json', 4882))),
     ('hi_IN-priyamvada-medium', (RemoteFile('hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx', 63516050, 'aa63bcf2cd493b55a450f280e23cf77f03afc9af7015e6e5acd43b652f166c88'), RemoteFile('hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx.json', 4973))),
     ('ur_PK-aegis_female-medium', (RemoteFile('ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx', 63515589, '3ec306035cfd0bbc22342fee5890450708a16dd231809522731678aa583c961f'), RemoteFile('ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx.json', 5236))),
+    ('hi_IN-rohan-medium', (RemoteFile('hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx', 62950044, 'b65dc80fb34d9dcd1cf684cb297966a34983bbc93bb1696fe207f32b0b33a091'), RemoteFile('hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx.json', 5041))),
 )
+
+# Gender of each voice (of speaker 0 for multi-speaker voices), measured with a gender classifier
+VOICE_GENDERS = {
+    'en_US-lessac-medium': 'female', 'en_US-ryan-medium': 'male', 'tr_TR-dfki-medium': 'male',
+    'de_DE-thorsten-medium': 'male', 'de_DE-ramona-low': 'female', 'fr_FR-siwis-medium': 'female',
+    'fr_FR-tom-medium': 'male', 'es_ES-davefx-medium': 'male', 'es_ES-sharvard-medium': 'male',
+    'pt_BR-faber-medium': 'male', 'it_IT-paola-medium': 'female', 'it_IT-riccardo-x_low': 'male',
+    'nl_NL-mls-medium': 'male', 'pl_PL-darkman-medium': 'male', 'pl_PL-gosia-medium': 'female',
+    'ru_RU-irina-medium': 'female', 'ru_RU-ruslan-medium': 'male', 'uk_UA-ukrainian_tts-medium': 'female',
+    'ar_JO-kareem-medium': 'male', 'zh_CN-huayan-medium': 'female', 'ja_JP-hi_fi_captain-medium': 'female',
+    'ko_KR-kss-medium': 'female', 'hi_IN-pratham-medium': 'male', 'hi_IN-priyamvada-medium': 'female',
+    'hi_IN-rohan-medium': 'male', 'ur_PK-fasih-medium': 'male', 'ur_PK-aegis_female-medium': 'female',
+    'bn_BD-google-medium': 'male', 'vi_VN-vais1000-medium': 'female', 'id_ID-news_tts-medium': 'female',
+}
 
 
 @dataclass(frozen=True)
@@ -181,6 +196,15 @@ VOICES = {
     )
     for voice_id, files in (*VOICE_TABLE.values(), *_EXTRA_VOICES)
 }
+
+
+def voices_for_language(lang_code):
+    """All downloadable voices for a target language, the default first."""
+    default = voice_for_language(lang_code)
+    if not default:
+        return []
+    locale = default.split('-')[0]
+    return [default] + sorted(v for v in VOICES if v != default and v.split('-')[0] == locale)
 
 
 def voice_for_language(lang_code):

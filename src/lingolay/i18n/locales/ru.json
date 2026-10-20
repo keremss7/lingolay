@@ -260,5 +260,7 @@
   "Listening…": "Слушаю…",
   "Female voice": "Женский голос",
   "Male voice": "Мужской голос",
-  "Default voice": "Голос по умолчанию"
+  "Default voice": "Голос по умолчанию",
+  "Voice:": "Голос:",
+  "default": "по умолчанию"
 }
