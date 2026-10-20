@@ -260,5 +260,7 @@
   "Listening…": "Hört zu…",
   "Female voice": "Frauenstimme",
   "Male voice": "Männerstimme",
-  "Default voice": "Standardstimme"
+  "Default voice": "Standardstimme",
+  "Voice:": "Stimme:",
+  "default": "Standard"
 }

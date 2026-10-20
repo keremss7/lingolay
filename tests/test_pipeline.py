@@ -75,3 +75,26 @@ def test_speaker_tile_turns_the_feature_and_dubbing_on(qapp, monkeypatch):
     w._region_selector.close()
     w.deleteLater()
     qapp.processEvents()
+
+
+def test_voice_picker_lists_the_target_language_voices_and_saves_the_choice(qapp, monkeypatch):
+    from lingolay.core.config import get_settings
+    from lingolay.ui import main_window as mw
+    s = get_settings()
+    monkeypatch.setattr(s, 'target_lang', 'hi')
+    monkeypatch.setattr(s.tts, 'voices', {})
+    w = mw.MainWindow()
+    combo = w._cmb_voice
+    assert [combo.itemData(i) for i in range(combo.count())] == ['hi_IN-pratham-medium', 'hi_IN-priyamvada-medium', 'hi_IN-rohan-medium']
+    assert combo.currentData() == 'hi_IN-pratham-medium' and combo.isEnabled()
+    combo.setCurrentIndex(2)
+    w._apply_tts_settings()
+    assert s.tts.voices['hi'] == 'hi_IN-rohan-medium'
+    assert w._dubbing_voice('hi') == 'hi_IN-rohan-medium'
+    monkeypatch.setattr(s.tts, 'voices', {'hi': 'not-a-voice'})
+    assert w._dubbing_voice('hi') == 'hi_IN-pratham-medium'  # stale settings fall back to the default
+    w._hotkeys.stop()
+    w._overlay.close()
+    w._region_selector.close()
+    w.deleteLater()
+    qapp.processEvents()

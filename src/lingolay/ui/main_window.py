@@ -933,6 +933,12 @@ class MainWindow(QMainWindow):
         speed_row.addWidget(_field_label(t('Speech rate:')))
         speed_row.addWidget(self._cmb_tts_speed, 1)
         card.add_row(speed_row)
+        voice_row = QHBoxLayout()
+        self._cmb_voice = NoWheelComboBox()
+        voice_row.addWidget(_field_label(t('Voice:')))
+        voice_row.addWidget(self._cmb_voice, 1)
+        card.add_row(voice_row)
+        self._refresh_voice_choices()
         self._chk_smooth = QCheckBox(t('Natural flow (finish sentences instead of cutting them off)'))
         self._chk_smooth.setChecked(tts.smooth_flow)
         self._chk_smooth.setToolTip(t('Lets each line finish, adds short pauses between sentences and speaks a little faster to catch up. Turn off to get the previous behavior.'))
@@ -1181,6 +1187,7 @@ class MainWindow(QMainWindow):
         self._pipeline.set_languages(src, tgt)
         self._pipeline.reload_translator()
         self._update_pair_label()
+        self._refresh_voice_choices()
         if self._tts_engine:
             self._tts_timer.stop()
             self._stop_speaker_matching()
@@ -1207,13 +1214,44 @@ class MainWindow(QMainWindow):
         tts.smooth_flow = self._chk_smooth.isChecked()
         tts.match_speaker = self._chk_match.isChecked()
         self._speaker_tile.set_checked(tts.match_speaker)
+        target = get_settings().target_lang
+        chosen = self._cmb_voice.currentData()
+        voice_changed = bool(chosen) and chosen != self._dubbing_voice(target)
+        if chosen:
+            tts.voices[target] = chosen
         save_settings()
-        if self._tts_engine:
+        if voice_changed and self._btn_tts.isChecked():
+            self._btn_tts.setChecked(False)  # restart dubbing with the new voice
+            self._btn_tts.setChecked(True)
+        elif self._tts_engine:
             self._tts_engine.configure(tts.speed, tts.volume / 100.0, tts.gain / 100.0, duck_enabled=tts.duck_enabled,
                                        duck_level=tts.duck_level / 100.0, smooth=tts.smooth_flow)
             if self._tts_engine.is_enabled:
                 self._update_speaker_matching()
         self._sb.showMessage(t('Dubbing settings saved.'), 3000)
+
+    def _dubbing_voice(self, lang):
+        """The voice the user picked for this language, else the default one."""
+        from lingolay.models.manifest import voices_for_language
+        options = voices_for_language(lang)
+        chosen = get_settings().tts.voices.get(lang)
+        return chosen if chosen in options else (options[0] if options else None)
+
+    def _refresh_voice_choices(self):
+        from lingolay.models.manifest import VOICE_GENDERS, voices_for_language
+        lang = get_settings().target_lang
+        options = voices_for_language(lang)
+        self._cmb_voice.blockSignals(True)
+        self._cmb_voice.clear()
+        for i, voice in enumerate(options):
+            name = voice.split('-')[1].replace('_', ' ').title()
+            gender = {'female': t('Female voice'), 'male': t('Male voice')}.get(VOICE_GENDERS.get(voice), '')
+            label = f'{name} — {gender}' if gender else name
+            self._cmb_voice.addItem(label + (f"  ({t('default')})" if i == 0 else ''), voice)
+        idx = self._cmb_voice.findData(self._dubbing_voice(lang))
+        self._cmb_voice.setCurrentIndex(max(0, idx))
+        self._cmb_voice.setEnabled(len(options) > 1)
+        self._cmb_voice.blockSignals(False)
 
     def _set_tts_checked(self, checked):
         self._btn_tts.blockSignals(True)
@@ -1229,9 +1267,9 @@ class MainWindow(QMainWindow):
                 self._tts_engine.disable()
             self._sb.showMessage(t('Dubbing off.'), 3000)
             return
-        from lingolay.tts import FastDubbingEngine, voice_for_target
+        from lingolay.tts import FastDubbingEngine
         s = get_settings()
-        voice = voice_for_target(s.target_lang)
+        voice = self._dubbing_voice(s.target_lang)
         if not voice:
             self._set_tts_checked(False)
             QMessageBox.information(self, __app_name__, t('No dubbing voice is available for {lang} yet.', lang=get_language(s.target_lang).name))
@@ -1272,10 +1310,13 @@ class MainWindow(QMainWindow):
     def _update_speaker_matching(self):
         """Turn "match the speaker's voice" on or off for the running dubbing, downloading what it needs."""
         from lingolay.models.manager import get_model_manager
-        from lingolay.models.manifest import gender_voices_for, get_model
+        from lingolay.models.manifest import VOICE_GENDERS, GenderVoice, gender_voices_for, get_model
         from lingolay.tts.speaker_match import SpeakerMatcher
         s = get_settings()
         voices = gender_voices_for(s.target_lang) if s.tts.match_speaker else None
+        chosen = self._dubbing_voice(s.target_lang)
+        if voices and VOICE_GENDERS.get(chosen) in voices:
+            voices = {**voices, VOICE_GENDERS[chosen]: GenderVoice(chosen)}  # the user's voice speaks for its gender
         if not voices or not SpeakerMatcher.supported() or not self._tts_engine:
             self._stop_speaker_matching()
             return

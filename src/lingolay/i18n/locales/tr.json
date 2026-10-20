@@ -260,5 +260,7 @@
   "Listening…": "Dinliyor…",
   "Female voice": "Kadın sesi",
   "Male voice": "Erkek sesi",
-  "Default voice": "Varsayılan ses"
+  "Default voice": "Varsayılan ses",
+  "Voice:": "Ses:",
+  "default": "varsayılan"
 }

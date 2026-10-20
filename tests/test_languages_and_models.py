@@ -77,3 +77,12 @@ def test_gender_voices_cover_both_genders_with_downloadable_voices():
 def test_aux_model_downloads_from_a_pinned_release():
     info = get_model('gender')
     assert info.url_for(info.files[0]) == 'https://github.com/keremss7/lingolay/releases/download/models-gender-v1/gender_ecapa.onnx'
+
+
+def test_voice_choices_per_language():
+    from lingolay.models.manifest import VOICE_GENDERS, voices_for_language
+    assert voices_for_language('hi') == ['hi_IN-pratham-medium', 'hi_IN-priyamvada-medium', 'hi_IN-rohan-medium']
+    assert voices_for_language('tr') == ['tr_TR-dfki-medium']
+    assert voices_for_language('xx') == []
+    assert set(VOICE_GENDERS) == set(VOICES)  # every downloadable voice has a known gender
+    assert set(VOICE_GENDERS.values()) == {'female', 'male'}
