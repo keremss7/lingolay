@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.4.0] — 2026-10-20
+
+### Added
+- **Choose the dubbing voice** for each language in *Voice dubbing → Voice*, with its gender shown. Hindi gets a third voice (Rohan). With *Speaker-aware voice* on, your choice is used for its gender.
+
+### Fixed
+- **Game mode missed subtitles inside a dark box.** Light grey or tinted text in a black or see-through box is now read too; white subtitles over the game look the same as before. Thanks to the Hindi/Urdu users who reported it ([discussion #14](https://github.com/keremss7/lingolay/discussions/14)).
+
 ## [2.3.1] — 2026-10-18
 
 ### Changed
