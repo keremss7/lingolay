@@ -3,6 +3,11 @@ import numpy as np
 
 from lingolay.core.config import PreprocessingConfig
 
+# Game mode: fall back to brightness thresholding for subtitles in a dark box
+BOXED_MIN_WHITE = 0.002      # white mask covering less than this share of the image counts as empty
+BOXED_MAX_BACKGROUND = 90    # median brightness of a "mostly dark" region
+BOXED_MIN_TEXT = 120         # the separated text must be at least this bright on average
+
 
 class ImagePreprocessor:
     """Image enhancement before OCR (grayscale, CLAHE contrast, sharpening, game mode)."""
@@ -68,6 +73,8 @@ class ImagePreprocessor:
         h, w = bgr.shape[:2]
         bgr = cv2.resize(bgr, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
         mask = cv2.inRange(bgr, (200, 200, 200), (255, 255, 255))
+        if cv2.countNonZero(mask) < mask.size * BOXED_MIN_WHITE:
+            mask = self._boxed_text_mask(bgr, mask)
         mask = cv2.GaussianBlur(mask, (3, 3), 0)
         _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
         kernel = np.ones((3, 3), np.uint8)
@@ -78,6 +85,22 @@ class ImagePreprocessor:
         pad = np.full((50, result.shape[1]), 255, dtype=np.uint8)
         result = np.vstack([pad, result, pad])
         return result
+
+    @staticmethod
+    def _boxed_text_mask(bgr, white_mask):
+        """
+        Subtitles inside a dark box are often light grey or tinted, not pure white, so the white
+        mask comes back (nearly) empty. When the region is mostly dark, separate the bright text
+        from the box with an Otsu threshold on brightness instead.
+        """
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        if np.median(gray) > BOXED_MAX_BACKGROUND:
+            return white_mask
+        _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        text = gray[mask > 0]
+        if not text.size or text.mean() < BOXED_MIN_TEXT or text.size > mask.size * 0.4:
+            return white_mask  # no clearly bright text on the dark background
+        return mask
 
     @staticmethod
     def subtitle_preset():
