@@ -36,3 +36,15 @@ def test_game_mode_keeps_white_text_and_ignores_dark_scenes():
     pre = ImagePreprocessor(ImagePreprocessor.game_subtitle_preset())
     assert _ink(pre.process(_text(_scene(2), (255, 255, 255), outline=True))) > 0.02
     assert _ink(pre.process(_scene(3, high=70))) < 0.002  # night scene without subtitles stays blank
+
+
+def test_game_mode_reads_tinted_text_on_a_letterbox_bar_below_the_picture():
+    # The region shows part of the game picture (bright pixels) above a black bar with grey text,
+    # so the white mask is not empty and a whole-region check never looked at the bar.
+    pre = ImagePreprocessor(ImagePreprocessor.game_subtitle_preset())
+    img = cv2.GaussianBlur(np.random.default_rng(5).integers(60, 220, (140, W, 3)).astype(np.uint8), (31, 31), 0)
+    img[56:] = 0
+    cv2.putText(img, TEXT, (30, 115), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (180, 180, 180), 2, cv2.LINE_AA)
+    out = pre.process(img)
+    bar = out[50 + 2 * 60: 50 + 2 * 140]  # the bar's rows in the 2x upscaled, padded output
+    assert _ink(bar) > 0.02
