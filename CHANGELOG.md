@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.4.1] — 2026-10-22
+
+### Fixed
+- **Game mode missed grey or tinted subtitles on the black bar below the picture** when the selected region also covered part of the game image. Dark bars and boxes are now detected row by row ([#15](https://github.com/keremss7/lingolay/issues/15)).
+
 ## [2.4.0] — 2026-10-20
 
 ### Added
