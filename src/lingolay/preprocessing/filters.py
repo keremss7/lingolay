@@ -4,8 +4,8 @@ import numpy as np
 from lingolay.core.config import PreprocessingConfig
 
 # Game mode: fall back to brightness thresholding for subtitles in a dark box
-BOXED_MIN_WHITE = 0.002      # white mask covering less than this share of the image counts as empty
-BOXED_MAX_BACKGROUND = 90    # median brightness of a "mostly dark" region
+BOXED_MIN_BAND = 0.2         # the dark bar/box must cover at least this share of the region's rows
+BOXED_MAX_BACKGROUND = 90    # median brightness of a dark row
 BOXED_MIN_TEXT = 120         # the separated text must be at least this bright on average
 
 
@@ -73,8 +73,7 @@ class ImagePreprocessor:
         h, w = bgr.shape[:2]
         bgr = cv2.resize(bgr, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
         mask = cv2.inRange(bgr, (200, 200, 200), (255, 255, 255))
-        if cv2.countNonZero(mask) < mask.size * BOXED_MIN_WHITE:
-            mask = self._boxed_text_mask(bgr, mask)
+        mask = self._add_dark_band_text(bgr, mask)
         mask = cv2.GaussianBlur(mask, (3, 3), 0)
         _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
         kernel = np.ones((3, 3), np.uint8)
@@ -87,19 +86,24 @@ class ImagePreprocessor:
         return result
 
     @staticmethod
-    def _boxed_text_mask(bgr, white_mask):
+    def _add_dark_band_text(bgr, white_mask):
         """
-        Subtitles inside a dark box are often light grey or tinted, not pure white, so the white
-        mask comes back (nearly) empty. When the region is mostly dark, separate the bright text
-        from the box with an Otsu threshold on brightness instead.
+        Subtitles on a black letterbox bar or inside a dark box are often light grey or tinted,
+        not pure white, so the white mask misses them. In the dark rows of the region (the bar
+        or box), separate the bright text with an Otsu threshold on brightness and add it.
+        Rows showing the game picture keep the white mask only.
         """
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        if np.median(gray) > BOXED_MAX_BACKGROUND:
+        dark_rows = np.median(gray, axis=1) <= BOXED_MAX_BACKGROUND
+        if dark_rows.sum() < len(dark_rows) * BOXED_MIN_BAND:
             return white_mask
-        _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        text = gray[mask > 0]
-        if not text.size or text.mean() < BOXED_MIN_TEXT or text.size > mask.size * 0.4:
-            return white_mask  # no clearly bright text on the dark background
+        band = gray[dark_rows]
+        _, band_mask = cv2.threshold(band, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        text = band[band_mask > 0]
+        if not text.size or text.mean() < BOXED_MIN_TEXT or text.size > band.size * 0.4:
+            return white_mask  # no clearly bright text in the dark band
+        mask = white_mask.copy()
+        mask[dark_rows] = np.maximum(mask[dark_rows], band_mask)
         return mask
 
     @staticmethod
