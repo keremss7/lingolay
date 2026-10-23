@@ -31,6 +31,7 @@ class BlockStyle:
     outline: tuple | None      # (r, g, b) of an outline around the glyphs, if the original has one
     patch: np.ndarray          # BGR image hiding the original text, shape (h, w, 3)
     bold: bool = False         # thick strokes relative to the text size
+    stroke: float = 0.0        # stroke width / font size
     free_left: int = 0         # how far the plain background reaches left/right of the text (frame x),
     free_right: int = 0        # so a longer translation stays inside its button or panel
 
@@ -62,7 +63,7 @@ def analyze(frame, rect, line_height, font_size=None):
     patch = frame[y0:y1, x0:x1].copy()
     dist = np.linalg.norm(patch.astype(np.float32) - bg, axis=2)
     text_mask = dist > TEXT_MIN_DIST
-    outline, bold = None, False
+    outline, bold, stroke_ratio = None, False, 0.0
     if text_mask.any():
         # The glyph's color is taken from the inside of its strokes; the edge differs when the
         # text has an outline (white text with a black border is common in game HUDs)
@@ -70,7 +71,8 @@ def analyze(frame, rect, line_height, font_size=None):
         depth = cv2.distanceTransform(text_mask.astype(np.uint8), cv2.DIST_L2, 3)
         inner = text_mask & (depth >= np.percentile(depth[text_mask], 70))
         stroke = 2 * float(np.percentile(depth[text_mask], 90))  # typical stroke width in px
-        bold = stroke / max(1.0, font_size or line_height / 0.85) > BOLD_MIN_STROKE
+        stroke_ratio = stroke / max(1.0, font_size or line_height / 0.85)
+        bold = stroke_ratio > BOLD_MIN_STROKE
         middle = float(np.median(lum[inner]))
         # the purest part of the fill: inner pixels on the far side of their median (away from blending)
         core = inner & ((lum >= middle) if middle >= float(bg.mean()) else (lum <= middle))
@@ -104,4 +106,4 @@ def analyze(frame, rect, line_height, font_size=None):
 
     to_rgb = lambda c: (int(c[2]), int(c[1]), int(c[0]))  # noqa: E731  (frames are BGR)
     return BlockStyle(x0, y0, x1 - x0, y1 - y0, to_rgb(bg), to_rgb(fg), flat,
-                      to_rgb(outline) if outline is not None else None, patch, bold, free_left, free_right)
+                      to_rgb(outline) if outline is not None else None, patch, bold, stroke_ratio, free_left, free_right)

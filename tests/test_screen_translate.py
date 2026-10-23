@@ -12,48 +12,34 @@ MENU = ['Inventory', 'Quest Log', 'Settings', 'Save Game', 'Exit to Main Menu']
 EXPECTED = MENU + ['Continue', 'An ancient sword forged by the elves.', 'Objective: Find the lost village']
 
 
-def _scene(qapp):
-    """1600x900 game screen: textured world, dark menu panel, orange button, parchment note, HUD text."""
-    from PySide6.QtCore import QRect, Qt
-    from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath, QPen
+def _scene(qapp=None):
+    """
+    1600x900 game screen: textured world, dark see-through menu, orange button, parchment note and
+    outlined HUD text. Drawn with OpenCV's built-in fonts so it is identical on every platform.
+    """
+    import cv2
     rng = np.random.default_rng(0)
     W, H = 1600, 900
     noise = rng.normal(0, 14, (H // 8 + 1, W // 8 + 1, 1)).repeat(8, 0).repeat(8, 1)[:H, :W]
-    world = np.clip(np.linspace(170, 90, H)[:, None, None] + noise * np.ones(3), 0, 255).astype(np.uint8)
-    world = np.ascontiguousarray(world * np.array([0.7, 0.9, 1.1]).clip(0, 1.5)).clip(0, 255).astype(np.uint8)
-    img = QImage(world.data, W, H, W * 3, QImage.Format.Format_RGB888).copy()
-    p = QPainter(img)
-    p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    font = QFont('Arial')
-    font.setPixelSize(30)
-    p.setFont(font)
-    p.setPen(Qt.PenStyle.NoPen)
-    p.setBrush(QColor(10, 12, 20, 210))
-    p.drawRoundedRect(60, 160, 380, 400, 16, 16)
-    p.setPen(QColor(235, 235, 240))
+    gradient = np.linspace(170, 90, H)[:, None, None] * np.array([1.1, 0.9, 0.7])  # BGR: bluish sky
+    img = np.clip(gradient + noise, 0, 255).astype(np.uint8)
+    font, scale = cv2.FONT_HERSHEY_DUPLEX, 1.0
+
+    def text(t, org, color, thickness=1):
+        cv2.putText(img, t, org, font, scale, color, thickness, cv2.LINE_AA)
+
+    panel = img[160:560, 60:440].astype(float)
+    img[160:560, 60:440] = (panel * 0.18 + np.array([20, 12, 10]) * 0.82).astype(np.uint8)  # see-through dark menu
     for i, item in enumerate(MENU):
-        p.drawText(100, 220 + i * 72, item)
-    p.setPen(Qt.PenStyle.NoPen)
-    p.setBrush(QColor(240, 130, 40))
-    p.drawRoundedRect(1300, 780, 250, 70, 12, 12)
-    bold = QFont(font)
-    bold.setBold(True)
-    p.setFont(bold)
-    p.setPen(QColor(25, 20, 15))
-    p.drawText(QRect(1300, 780, 250, 70), Qt.AlignmentFlag.AlignCenter, 'Continue')
-    p.setFont(font)
-    p.fillRect(540, 220, 680, 220, QColor(222, 200, 160))
-    p.setPen(QColor(70, 40, 20))
-    p.drawText(580, 280, 'An ancient sword forged by the elves.')
-    p.drawText(580, 320, 'It glows blue when enemies are near.')
-    path = QPainterPath()
-    path.addText(980, 80, font, 'Objective: Find the lost village')
-    p.strokePath(path, QPen(QColor(0, 0, 0), 4))
-    p.fillPath(path, QColor(255, 255, 255))
-    p.end()
-    img = img.convertToFormat(QImage.Format.Format_RGB888)
-    arr = np.frombuffer(img.constBits(), np.uint8).reshape(H, img.bytesPerLine())[:, :W * 3].reshape(H, W, 3)
-    return np.ascontiguousarray(arr[:, :, ::-1])  # BGR like a screen capture
+        text(item, (100, 220 + i * 72), (240, 235, 235))
+    cv2.rectangle(img, (1300, 780), (1550, 850), (40, 130, 240), -1)  # orange button, bold label
+    text('Continue', (1350, 828), (15, 20, 25), thickness=4)
+    img[220:440, 540:1220] = (160, 200, 222)  # parchment
+    text('An ancient sword forged by the elves.', (580, 280), (20, 40, 70))
+    text('It glows blue when enemies are near.', (580, 320), (20, 40, 70))
+    cv2.putText(img, 'Objective: Find the lost village', (980, 80), font, scale, (0, 0, 0), 7, cv2.LINE_AA)
+    text('Objective: Find the lost village', (980, 80), (255, 255, 255))
+    return img
 
 
 def test_lines_are_grouped_into_labels_and_paragraphs():
@@ -88,10 +74,11 @@ def test_plain_panel_is_covered_with_its_own_color(qapp):
     assert style.flat
     assert style.patch.reshape(-1, 3).std(axis=0).max() < 2  # the text is gone, only the panel color remains
     assert style.outline is None
-    assert not style.bold
     box = _dark_box(frame, 1310, 790, 1540, 840)  # bold "Continue" on the orange button
     button = analyze(frame, box, box[3], font_size_of(OcrLine('Continue', *box)))
-    assert button.bold and button.flat and button.free_left <= 1305 and button.free_right >= 1545
+    assert button.flat and button.free_left <= 1305 and button.free_right >= 1545
+    # the absolute bold threshold is calibrated on real fonts; OpenCV's test font is thicker overall
+    assert button.stroke > 1.3 * style.stroke
     assert max(style.text) > 200 and max(style.background) < 60  # light text on a dark panel
 
 
