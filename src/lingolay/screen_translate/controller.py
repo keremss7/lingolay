@@ -41,15 +41,19 @@ def find_lines(ocr, frame):
     return lines
 
 
-def build_items(frame, lines, translate, skip_rects=()):
-    """OCR lines → LensItems for the blocks worth showing. `translate(text) -> str`."""
+def build_items(frame, lines, translate, skip_rects=(), translate_many=None):
+    """
+    OCR lines → LensItems for the blocks worth showing. `translate(text) -> str`; when
+    `translate_many(texts) -> [str]` is given, all blocks are translated in one call.
+    """
     items = []
-    blocks = group_blocks(lines)
-    for block in blocks:
+    blocks = [b for b in group_blocks(lines)
+              if not any(QRect(*r).intersects(QRect(*b.rect)) for r in skip_rects)]  # skip Lingolay's windows
+    texts = [b.text for b in blocks]
+    translations = translate_many(texts) if translate_many else [translate(t) for t in texts]
+    for block, translation in zip(blocks, translations):
         rect = block.rect
-        if any(QRect(*r).intersects(QRect(*rect)) for r in skip_rects):
-            continue  # Lingolay's own windows
-        translation = (translate(block.text) or '').strip()
+        translation = (translation or '').strip()
         if not translation or translation.casefold() == block.text.casefold():
             continue  # untranslated or already in the target language: leave the original alone
         items.append(LensItem(analyze(frame, rect, block.line_height, block.font_size), rect, block.line_height, translation,
@@ -77,6 +81,7 @@ class ScreenTranslator(QObject):
 
     finished = Signal(object, object, float, str)   # items, QScreen, device pixel ratio, summary
     failed = Signal(str)
+    captured = Signal(object)                       # QScreen: the frame is taken, show the busy pill
 
     def __init__(self, get_translator, get_ocr_language, get_skip_rects, parent=None):
         super().__init__(parent)
@@ -87,16 +92,18 @@ class ScreenTranslator(QObject):
         self._ocr, self._ocr_lang = None, None
         self._busy = False
         self.finished.connect(self._show)
+        self.captured.connect(self._overlay.show_busy)
+        self.failed.connect(lambda _e: self._overlay.clear())
 
     @property
     def active(self):
         return self._overlay.active
 
     def toggle(self):
+        if self._busy:
+            return  # the translation is still being prepared
         if self._overlay.active:
             self._overlay.clear()
-            return
-        if self._busy:
             return
         translator = self._get_translator()
         if translator is None or not getattr(translator, 'is_ready', False):
@@ -112,13 +119,15 @@ class ScreenTranslator(QObject):
         try:
             t0 = time.perf_counter()
             frame, scale = self._capture(screen)
+            self.captured.emit(screen)
             t1 = time.perf_counter()
             lines = find_lines(self._ocr_engine(), frame)
             t2 = time.perf_counter()
             g = screen.geometry()  # skip rects are global logical coordinates; frames start at the monitor
             skip = [(int((x - g.x()) * scale), int((y - g.y()) * scale), int(w * scale), int(h * scale))
                     for x, y, w, h in skip_rects]
-            items = build_items(frame, lines, lambda s: translator.translate(s).text, skip)
+            items = build_items(frame, lines, lambda s: translator.translate(s).text, skip,
+                                getattr(translator, 'translate_many', None))
             t3 = time.perf_counter()
             summary = (f'{len(items)} blocks · capture {1000 * (t1 - t0):.0f} ms · OCR {1000 * (t2 - t1):.0f} ms'
                        f' · translate+style {1000 * (t3 - t2):.0f} ms')
@@ -157,6 +166,8 @@ class ScreenTranslator(QObject):
     def _show(self, items, screen, scale, _summary):
         if items:
             self._overlay.show_items(screen, items, scale)
+        else:
+            self._overlay.clear()
 
     def hide(self):
         self._overlay.clear()

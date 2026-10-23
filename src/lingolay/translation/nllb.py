@@ -220,7 +220,12 @@ class NLLBTranslator:
     def _translate_raw(self, text):
         """Translate text (sentence by sentence, in a single batch)."""
         sentences = self._split_sentences(text)
-        beam = 4 if self._is_complex(text) else self._beam_size
+        outputs = self._translate_sentences(sentences, 4 if self._is_complex(text) else self._beam_size)
+        sep = '' if self._to_lang in ('zh', 'ja') else ' '
+        return sep.join(o for o in outputs if o)
+
+    def _translate_sentences(self, sentences, beam):
+        """One CTranslate2 batch for a list of sentences → list of translations."""
         results = self._translator.translate_batch(
             [self._tokenize(s) for s in sentences],
             target_prefix=[[self._tgt_lang]] * len(sentences),
@@ -240,8 +245,47 @@ class NLLBTranslator:
             if out.startswith(('- ', '– ', '— ')) and not sentence.startswith(('-', '–', '—')):
                 out = out[2:]
             outputs.append(out)
-        sep = '' if self._to_lang in ('zh', 'ja') else ' '
-        return sep.join(o for o in outputs if o)
+        return outputs
+
+    def translate_many(self, texts):
+        """
+        Translate several independent texts with one model call (much faster than one call each,
+        e.g. every label on a game screen). Returns a list of strings ('' for failures).
+        """
+        if not self._ready:
+            return [''] * len(texts)
+        prepared = []
+        for text in texts:
+            text = self._preprocess(text)
+            if len(text) > self.MAX_TEXT_LENGTH:
+                text = text[:self.MAX_TEXT_LENGTH].rsplit(' ', 1)[0]
+            prepared.append(text)
+        results = [self._cache.get(t) if t.strip() else '' for t in prepared]
+        todo = [i for i, r in enumerate(results) if r is None]
+        if todo:
+            sentences, owner = [], []
+            for i in todo:
+                for sentence in self._split_sentences(prepared[i]):
+                    sentences.append(sentence)
+                    owner.append(i)
+            try:
+                outputs = self._translate_sentences(sentences, self._beam_size)
+            except Exception as e:
+                logger.warning('[NLLB] Batch translation failed: %s', e)
+                outputs = [''] * len(sentences)
+            sep = '' if self._to_lang in ('zh', 'ja') else ' '
+            joined = {i: [] for i in todo}
+            for i, out in zip(owner, outputs):
+                if out:
+                    joined[i].append(out)
+            for i in todo:
+                translated = sep.join(joined[i])
+                if self._post_process:
+                    translated = _post_process_turkish(translated)
+                if translated:
+                    self._cache.put(prepared[i], translated)
+                results[i] = translated
+        return results
 
     def _translate_with_retry(self, text):
         last_error = None

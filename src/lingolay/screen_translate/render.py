@@ -150,17 +150,25 @@ class LensOverlay(QWidget):
                          | Qt.WindowType.Tool | Qt.WindowType.WindowTransparentForInput)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
-        self._items, self._scale = [], 1.0
+        self._items, self._scale, self._busy = [], 1.0, False
+
+    def show_busy(self, screen):
+        """A small 'Translating…' pill in the corner while the first translation is prepared."""
+        self._items, self._busy = [], True
+        self.setGeometry(screen.geometry())
+        self.show()
+        self._apply_win32()
+        self.update()
 
     def show_items(self, screen, items, scale):
-        self._items, self._scale = items, scale
+        self._items, self._scale, self._busy = items, scale, False
         self.setGeometry(screen.geometry())
         self.show()
         self._apply_win32()
         self.update()
 
     def clear(self):
-        self._items = []
+        self._items, self._busy = [], False
         self.hide()
 
     @property
@@ -183,5 +191,21 @@ class LensOverlay(QWidget):
 
     def paintEvent(self, _event):
         painter = QPainter(self)
-        draw_items(painter, self._items, self._scale)
+        if self._busy:
+            from lingolay.i18n import t
+            font = QFont(FONT_FAMILY)
+            font.setPixelSize(15)
+            font.setWeight(QFont.Weight.DemiBold)
+            painter.setFont(font)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            label = '🔎  ' + t('Translating…')
+            w = QFontMetricsF(font).horizontalAdvance(label) + 28
+            pill = QRectF(self.width() - w - 24, 24, w, 34)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(13, 13, 15, 215))
+            painter.drawRoundedRect(pill, 17, 17)
+            painter.setPen(QColor(236, 236, 239))
+            painter.drawText(pill, Qt.AlignmentFlag.AlignCenter, label)
+        else:
+            draw_items(painter, self._items, self._scale)
         painter.end()

@@ -135,3 +135,36 @@ def test_windows_ocr_finds_the_game_texts(qapp):
     warnings.warn(f'Windows OCR found {len(found)}/{len(EXPECTED)} in {elapsed:.0f} ms; missing {sorted(set(EXPECTED) - set(found))}; '
                   f'blocks {[b.text for b in blocks]}', stacklevel=1)  # shown in the CI log even when passing
     assert len(found) >= 6
+
+
+def test_hotkey_flow_shows_and_hides_the_translation(qapp, qtbot, monkeypatch):
+    from PySide6.QtGui import QGuiApplication
+
+    from lingolay.screen_translate.controller import ScreenTranslator
+    frame = _scene()
+
+    class FakeOCR:
+        def recognize_layout(self, image):
+            return [OcrLine('Settings', 100, 340, 120, 30)] if image.shape == frame.shape and image.std() > 20 else []
+
+    class FakeTranslator:
+        is_ready = True
+
+        def translate_many(self, texts):
+            return ['Ayarlar' for _ in texts]
+
+    st = ScreenTranslator(lambda: FakeTranslator(), lambda: 'en-US', lambda: [])
+    monkeypatch.setattr(ScreenTranslator, '_capture', staticmethod(lambda screen: (frame, 1.0)))
+    monkeypatch.setattr(st, '_ocr_engine', lambda: FakeOCR())
+    with qtbot.waitSignal(st.finished, timeout=10000) as blocker:
+        st.toggle()
+    items = blocker.args[0]
+    assert [i.translation for i in items] == ['Ayarlar']
+    assert st.active and blocker.args[1] in QGuiApplication.screens()
+    st.toggle()  # second press hides it
+    assert not st.active
+
+    st_not_ready = ScreenTranslator(lambda: None, lambda: 'en-US', lambda: [])
+    with qtbot.waitSignal(st_not_ready.failed, timeout=2000) as failed:
+        st_not_ready.toggle()
+    assert failed.args == ['translator']

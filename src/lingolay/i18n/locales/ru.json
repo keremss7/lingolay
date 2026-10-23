@@ -266,5 +266,6 @@
   "Translate screen": "Перевести экран",
   "Translates every text on the screen in place, like a camera translator. Press again to hide. Shortcut: Ctrl+Alt+T (experimental)": "Переводит весь текст на экране прямо на месте, как камера-переводчик. Нажмите ещё раз, чтобы скрыть. Сочетание: Ctrl+Alt+T (экспериментально)",
   "Screen translated: {count} texts": "Экран переведён: {count} фрагм.",
-  "No text to translate was found on the screen.": "На экране не найден текст для перевода."
+  "No text to translate was found on the screen.": "На экране не найден текст для перевода.",
+  "Translating…": "Перевожу…"
 }
