@@ -370,11 +370,17 @@ class MainWindow(QMainWindow):
     _sig_hk_toggle_window = Signal()
     _sig_hk_game_mode = Signal()
     _sig_hk_toggle_tts = Signal()
+    _sig_hk_translate_screen = Signal()
 
     def __init__(self):
         super().__init__()
         self._region_selector = RegionSelector()
         self._overlay = OverlayWindow()
+        from lingolay.screen_translate.controller import ScreenTranslator
+        self._screen_translator = ScreenTranslator(lambda: self._pipeline.translator,
+                                                   lambda: get_settings().ocr_language, self._own_window_rects, self)
+        self._screen_translator.finished.connect(self._on_screen_translated)
+        self._screen_translator.failed.connect(self._on_screen_translate_failed)
         self._pipeline = Pipeline()
         self._hotkeys = HotkeyManager()
         self._current_profile = None
@@ -659,7 +665,17 @@ class MainWindow(QMainWindow):
         self._btn_game_mode.setToolTip(t('Starts translating, hides this window and switches the game window to borderless.\n'
                                          'Bring the window back with Ctrl+Alt+W.'))
         self._btn_game_mode.clicked.connect(self._enter_game_mode)
-        card.add_widget(self._btn_game_mode)
+        self._btn_translate_screen = QPushButton(f"🔎  {t('Translate screen')}")
+        self._btn_translate_screen.setObjectName('btn_sec')
+        self._btn_translate_screen.setMinimumHeight(36)
+        self._btn_translate_screen.setToolTip(t('Translates every text on the screen in place, like a camera translator. '
+                                                'Press again to hide. Shortcut: Ctrl+Alt+T (experimental)'))
+        self._btn_translate_screen.clicked.connect(self._screen_translator.toggle)
+        mode_row = QHBoxLayout()
+        mode_row.setSpacing(8)
+        mode_row.addWidget(self._btn_game_mode)
+        mode_row.addWidget(self._btn_translate_screen)
+        card.add_row(mode_row)
         card.add_spacing(4)
         toggle_row = QHBoxLayout()
         toggle_row.setSpacing(8)
@@ -1148,6 +1164,7 @@ class MainWindow(QMainWindow):
         self._sig_hk_toggle_window.connect(self._toggle_window)
         self._sig_hk_game_mode.connect(self._enter_game_mode)
         self._sig_hk_toggle_tts.connect(self._btn_tts.toggle)
+        self._sig_hk_translate_screen.connect(self._screen_translator.toggle)
 
     def _setup_hotkeys(self):
         hm = self._hotkeys
@@ -1158,6 +1175,7 @@ class MainWindow(QMainWindow):
         hm.set_callback('toggle_window', self._sig_hk_toggle_window.emit)
         hm.set_callback('game_mode', self._sig_hk_game_mode.emit)
         hm.set_callback('toggle_tts', self._sig_hk_toggle_tts.emit)
+        hm.set_callback('translate_screen', self._sig_hk_translate_screen.emit)
         hm.load_from_config(get_settings().hotkeys)
         hm.start()
 
@@ -1299,6 +1317,27 @@ class MainWindow(QMainWindow):
         self._tts_timer.start()
         self._sb.showMessage(t('Dubbing on — translations will be read aloud.'), 4000)
         self._update_speaker_matching()
+
+    def _own_window_rects(self):
+        """Lingolay's visible windows (global logical coordinates), left out of Translate screen."""
+        rects = []
+        for widget in (self, self._overlay):
+            if widget.isVisible():
+                g = widget.frameGeometry()
+                rects.append((g.x(), g.y(), g.width(), g.height()))
+        return rects
+
+    def _on_screen_translated(self, items, _screen, _scale, summary):
+        if items:
+            self._sb.showMessage(t('Screen translated: {count} texts', count=len(items)), 4000)
+        else:
+            self._sb.showMessage(t('No text to translate was found on the screen.'), 4000)
+
+    def _on_screen_translate_failed(self, error):
+        if error == 'translator':
+            self._sb.showMessage(t('The translator is not ready yet, please wait'), 5000)
+        else:
+            self._sb.showMessage(t('Translation error: {error}', error=error), 8000)
 
     def _stop_speaker_matching(self):
         if self._tts_engine:
@@ -1755,6 +1794,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(100, self._overlay.show)
 
     def closeEvent(self, event):
+        self._screen_translator.hide()
         self._tts_timer.stop()
         self._stop_speaker_matching()
         if self._tts_engine:

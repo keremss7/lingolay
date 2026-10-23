@@ -37,6 +37,7 @@ ACTION_LABELS = {
     'toggle_window': 'Show/hide window',
     'game_mode': 'Game mode',
     'toggle_tts': 'Dubbing on/off',
+    'translate_screen': 'Translate screen',
 }
 
 DEFAULT_HOTKEYS = {
@@ -47,6 +48,7 @@ DEFAULT_HOTKEYS = {
     'toggle_window': 'Ctrl+Alt+W',
     'game_mode': 'Ctrl+Alt+G',
     'toggle_tts': 'Ctrl+Alt+D',
+    'translate_screen': 'Ctrl+Alt+T',
 }
 
 _KEY_TO_VK: dict[str, int] = {}
