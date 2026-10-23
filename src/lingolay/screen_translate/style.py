@@ -14,7 +14,7 @@ import numpy as np
 FLAT_MAX_STD = 8.0      # ring brightness spread below which the background counts as plain
 TEXT_MIN_DIST = 40.0    # color distance from the background that counts as text
 OUTLINE_MIN_DIFF = 110  # brightness gap between a glyph's edge and its inside that means an outline
-BOLD_MIN_STROKE = 0.155  # stroke width / font size above which text counts as bold (measured: regular ~0.13, bold ~0.18)
+BOLD_MIN_STROKE = 0.132  # stroke / font size above which text is bold (measured on 4 fonts: regular <=0.124, bold mostly >=0.137)
 PAD_FACTOR = 0.18       # padding around the OCR box, relative to line height
 PAD_X_FACTOR = 0.45     # more on the sides: OCR boxes often leave out trailing punctuation
 
@@ -70,7 +70,11 @@ def analyze(frame, rect, line_height, font_size=None):
         lum = patch.astype(np.float32).mean(axis=2)
         depth = cv2.distanceTransform(text_mask.astype(np.uint8), cv2.DIST_L2, 3)
         inner = text_mask & (depth >= np.percentile(depth[text_mask], 70))
-        stroke = 2 * float(np.percentile(depth[text_mask], 90))  # typical stroke width in px
+        # stroke width: along the centre lines of the glyphs, at half contrast (ignores anti-aliasing halos)
+        core_mask = (dist > 0.5 * float(dist[text_mask].max())).astype(np.uint8)
+        core_depth = cv2.distanceTransform(core_mask, cv2.DIST_L2, 3)
+        ridge = (core_depth >= cv2.dilate(core_depth, np.ones((3, 3), np.uint8))) & (core_mask > 0)
+        stroke = 2 * float(np.median(core_depth[ridge])) if ridge.any() else 0.0
         stroke_ratio = stroke / max(1.0, font_size or line_height / 0.85)
         bold = stroke_ratio > BOLD_MIN_STROKE
         middle = float(np.median(lum[inner]))

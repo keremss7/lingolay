@@ -15,6 +15,32 @@ from .style import analyze
 logger = logging.getLogger(__name__)
 
 
+def _overlaps(a, b):
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    ix = max(0, min(ax + aw, bx + bw) - max(ax, bx))
+    iy = max(0, min(ay + ah, by + bh) - max(ay, by))
+    return ix * iy > 0.3 * min(aw * ah, bw * bh)
+
+
+def find_lines(ocr, frame):
+    """
+    OCR lines with boxes. A second pass reads only the white pixels (as black on white): outlined
+    white HUD text over a busy scene is often missed on the full image but is clean in that view.
+    """
+    import cv2
+    import numpy as np
+    lines = list(ocr.recognize_layout(frame))
+    white = cv2.inRange(frame, (200, 200, 200), (255, 255, 255))
+    if cv2.countNonZero(white):
+        isolated = cv2.cvtColor(255 - white, cv2.COLOR_GRAY2BGR)
+        for line in ocr.recognize_layout(np.ascontiguousarray(isolated)):
+            box = (line.x, line.y, line.w, line.h)
+            if not any(_overlaps(box, (o.x, o.y, o.w, o.h)) for o in lines):
+                lines.append(line)
+    return lines
+
+
 def build_items(frame, lines, translate, skip_rects=()):
     """OCR lines → LensItems for the blocks worth showing. `translate(text) -> str`."""
     items = []
@@ -87,7 +113,7 @@ class ScreenTranslator(QObject):
             t0 = time.perf_counter()
             frame, scale = self._capture(screen)
             t1 = time.perf_counter()
-            lines = self._ocr_engine().recognize_layout(frame)
+            lines = find_lines(self._ocr_engine(), frame)
             t2 = time.perf_counter()
             g = screen.geometry()  # skip rects are global logical coordinates; frames start at the monitor
             skip = [(int((x - g.x()) * scale), int((y - g.y()) * scale), int(w * scale), int(h * scale))

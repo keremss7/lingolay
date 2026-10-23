@@ -123,10 +123,15 @@ def test_windows_ocr_finds_the_game_texts(qapp):
     except Exception as e:  # diagnostics for CI
         diag = f'raw error {type(e).__name__}: {e}'
     warnings.warn(f'plain text: {ocr.recognize(frame)[:120]!r}; {diag}', stacklevel=1)
-    blocks = group_blocks(ocr.recognize_layout(frame))
+    import time
+
+    from lingolay.screen_translate.controller import find_lines
+    start = time.perf_counter()
+    blocks = group_blocks(find_lines(ocr, frame))
+    elapsed = (time.perf_counter() - start) * 1000
     texts = [b.text.lower() for b in blocks]
     found = [e for e in EXPECTED if any(e.lower()[:12] in t for t in texts)]
     import warnings
-    warnings.warn(f'Windows OCR found {len(found)}/{len(EXPECTED)}; missing {sorted(set(EXPECTED) - set(found))}; '
+    warnings.warn(f'Windows OCR found {len(found)}/{len(EXPECTED)} in {elapsed:.0f} ms; missing {sorted(set(EXPECTED) - set(found))}; '
                   f'blocks {[b.text for b in blocks]}', stacklevel=1)  # shown in the CI log even when passing
     assert len(found) >= 6
