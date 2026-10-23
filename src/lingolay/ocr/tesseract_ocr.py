@@ -53,6 +53,34 @@ class TesseractOCR(OCREngine):
     def set_language(self, language):
         self._lang = _to_tesseract_lang(language)
 
+    def recognize_layout(self, image):
+        """Lines with boxes from Tesseract's word data (grouped by block, paragraph and line)."""
+        if not self._available:
+            return []
+        try:
+            import cv2
+            rgb = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            data = pytesseract.image_to_data(rgb, lang=self._lang, config='--psm 11', output_type=pytesseract.Output.DICT)
+        except Exception as e:
+            logger.warning('[Tesseract] Layout recognition error: %s', e)
+            return []
+        from lingolay.ocr.base import OcrLine
+        groups = {}
+        for i, word in enumerate(data['text']):
+            if not word.strip() or float(data['conf'][i]) < 30:
+                continue
+            key = (data['block_num'][i], data['par_num'][i], data['line_num'][i])
+            groups.setdefault(key, []).append(i)
+        lines = []
+        for idx in groups.values():
+            idx.sort(key=lambda i: data['left'][i])
+            x0 = min(data['left'][i] for i in idx)
+            y0 = min(data['top'][i] for i in idx)
+            x1 = max(data['left'][i] + data['width'][i] for i in idx)
+            y1 = max(data['top'][i] + data['height'][i] for i in idx)
+            lines.append(OcrLine(' '.join(data['text'][i] for i in idx), x0, y0, x1 - x0, y1 - y0))
+        return lines
+
     def recognize(self, image):
         if not self._available:
             return ''

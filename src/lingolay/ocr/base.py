@@ -1,8 +1,19 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import numpy as np
 
 from lingolay.i18n import t
+
+
+@dataclass(frozen=True)
+class OcrLine:
+    """A recognized line of text with its box (pixels, in the image passed to the engine)."""
+    text: str
+    x: int
+    y: int
+    w: int
+    h: int
 
 
 class OCREngine(ABC):
@@ -25,6 +36,10 @@ class OCREngine(ABC):
     @abstractmethod
     def is_available(self) -> bool:
         """Check if this engine is available on the system."""
+
+    def recognize_layout(self, image: np.ndarray) -> list:
+        """Lines of text with their positions (list of OcrLine); engines without positions return []."""
+        return []
 
     @property
     def last_latency_ms(self) -> int:

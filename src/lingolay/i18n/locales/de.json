@@ -262,5 +262,10 @@
   "Male voice": "Männerstimme",
   "Default voice": "Standardstimme",
   "Voice:": "Stimme:",
-  "default": "Standard"
+  "default": "Standard",
+  "Translate screen": "Bildschirm übersetzen",
+  "Translates every text on the screen in place, like a camera translator. Press again to hide. Shortcut: Ctrl+Alt+T (experimental)": "Übersetzt jeden Text auf dem Bildschirm direkt an Ort und Stelle, wie ein Kamera-Übersetzer. Erneut drücken zum Ausblenden. Kürzel: Strg+Alt+T (experimentell)",
+  "Screen translated: {count} texts": "Bildschirm übersetzt: {count} Texte",
+  "No text to translate was found on the screen.": "Auf dem Bildschirm wurde kein Text zum Übersetzen gefunden.",
+  "Translating…": "Übersetze…"
 }

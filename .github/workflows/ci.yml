@@ -39,6 +39,14 @@ jobs:
       - name: Qt system libraries (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+      - name: Windows OCR language data (en-US)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $cap = Get-WindowsCapability -Online | Where-Object Name -like 'Language.OCR*en-US*'
+          $cap | Format-Table Name, State
+          if ($cap -and $cap.State -ne 'Installed') { Add-WindowsCapability -Online -Name $cap.Name | Out-Null }
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
       - run: python -X faulthandler -m pytest -q

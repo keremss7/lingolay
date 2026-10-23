@@ -20,7 +20,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 
 [**⬇ Download for Windows**](https://github.com/keremss7/lingolay/releases/latest) · [Quick start](#-quick-start) · [How it works](#-how-it-works) · [Contributing](#-contributing) · [🇹🇷 Türkçe](docs/README.tr.md) · [🇷🇺 Русский](docs/README.ru.md)
 
-> 🆕 **New in v2.3: speaker‑aware dubbing.** A woman's line is dubbed with a female voice, a man's with a male voice, automatically and offline.
+> 🆕 **New in v2.5: Translate screen.** Press `Ctrl+Alt+T` and every text on the screen (menus, notes, item descriptions, HUD) is translated **in place**, in the game's own style, like a camera translator.
 
 <img src="docs/images/demo.png" alt="Lingolay translating a subtitle in real time" width="820">
 
@@ -37,6 +37,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 | 🎮 **Built for games** | Game mode (auto‑borderless), click‑through always‑on‑top overlay, global hotkeys that work in‑game, white‑text subtitle isolation. |
 | 🗣️ **Neural voice dubbing** | Hear translations read aloud with [Piper](https://github.com/rhasspy/piper) voices — also offline — while other apps are automatically ducked. Available for every target language except Thai (for now). |
 | 🎭 **Speaker‑aware dubbing** *(new, experimental)* | Lingolay listens to the game or video, hears whether a **man or a woman** is speaking and dubs each line with a **matching voice**, in all 20 dubbed languages. Fully offline, and Lingolay's own voice is never picked up. Turn it on under *Voice dubbing → Match the speaker's voice* (Windows 10 2004+). |
+| 🔎 **Translate screen** *(new, experimental)* | Press `Ctrl+Alt+T`: every text on the screen is translated **right where it is**, drawn over the original with its colors, outline and size, so menus, notes and HUDs read as if the game were in your language. Press again to hide. |
 | 🧠 **Smart subtitle handling** | Waits for typewriter‑style subtitles to finish, ignores OCR flicker, never re‑translates a line it already showed, and never reads its own overlay. |
 | ⚡ **Fast** | ~150–250 ms per sentence on a regular CPU, faster with an NVIDIA GPU. Adaptive capture rate keeps CPU usage low. |
 | 🧩 **Optional DeepL** | Bring your own free DeepL API key for maximum quality with zero GPU load. |
@@ -106,7 +107,7 @@ lingolay --download fast voice:tr      # translation model + Turkish dubbing voi
 | Start / Stop | `Ctrl+Alt+S` | OCR preview | `Ctrl+Alt+P` |
 | Select region | `Ctrl+Alt+R` | Show/hide window | `Ctrl+Alt+W` |
 | Show/hide overlay | `Ctrl+Alt+O` | Game mode | `Ctrl+Alt+G` |
-| Dubbing on/off | `Ctrl+Alt+D` | | |
+| Dubbing on/off | `Ctrl+Alt+D` | Translate screen | `Ctrl+Alt+T` |
 
 All shortcuts can be rebound in the app.
 

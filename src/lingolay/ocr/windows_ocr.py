@@ -89,8 +89,34 @@ class WindowsOCR(OCREngine):
         self._last_latency_ms = int((time.perf_counter() - start) * 1000)
         return result
 
+    def recognize_layout(self, image):
+        """Lines with their boxes (from the word boxes Windows OCR returns)."""
+        if not self.is_available():
+            return []
+        try:
+            result = _run_async_in_loop(self._recognize_raw(image))
+        except Exception as e:
+            logger.warning('[WinOCR] Layout recognition error: %s', e)
+            return []
+        from lingolay.ocr.base import OcrLine
+        lines = []
+        for line in result.lines:
+            rects = [w.bounding_rect for w in line.words]
+            if not rects:
+                continue
+            x0 = min(r.x for r in rects)
+            y0 = min(r.y for r in rects)
+            x1 = max(r.x + r.width for r in rects)
+            y1 = max(r.y + r.height for r in rects)
+            lines.append(OcrLine(line.text, int(x0), int(y0), int(round(x1 - x0)), int(round(y1 - y0))))
+        return lines
+
     async def _recognize_async(self, image):
         """Async OCR recognition using WinRT SoftwareBitmap."""
+        ocr_result = await self._recognize_raw(image)
+        return '\n'.join(' '.join(w.text for w in line.words) for line in ocr_result.lines)
+
+    async def _recognize_raw(self, image):
         import cv2
         height, width = image.shape[:2]
         if image.ndim == 2:
@@ -103,8 +129,7 @@ class WindowsOCR(OCREngine):
             bgra = np.ascontiguousarray(bgra)
         bitmap = SoftwareBitmap(BitmapPixelFormat.BGRA8, width, height, BitmapAlphaMode.PREMULTIPLIED)
         bitmap.copy_from_buffer(memoryview(bgra.tobytes()))
-        ocr_result = await self._engine.recognize_async(bitmap)
-        return '\n'.join(' '.join(w.text for w in line.words) for line in ocr_result.lines)
+        return await self._engine.recognize_async(bitmap)
 
     @staticmethod
     def get_available_languages():

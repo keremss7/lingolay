@@ -262,5 +262,10 @@
   "Male voice": "Erkek sesi",
   "Default voice": "Varsayılan ses",
   "Voice:": "Ses:",
-  "default": "varsayılan"
+  "default": "varsayılan",
+  "Translate screen": "Ekranı çevir",
+  "Translates every text on the screen in place, like a camera translator. Press again to hide. Shortcut: Ctrl+Alt+T (experimental)": "Ekrandaki tüm yazıları kamera çevirmeni gibi yerinde çevirir. Gizlemek için tekrar basın. Kısayol: Ctrl+Alt+T (deneysel)",
+  "Screen translated: {count} texts": "Ekran çevrildi: {count} yazı",
+  "No text to translate was found on the screen.": "Ekranda çevrilecek yazı bulunamadı.",
+  "Translating…": "Çevriliyor…"
 }

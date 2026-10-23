@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.0] — 2026-10-23
+
+### Added
+- **Translate screen** *(experimental)*: press **Ctrl+Alt+T** (or *Translate screen* on the home page) and every piece of text on the screen is translated in place, drawn over the original with its background, colors, outline and size; press again to hide. Built for game menus, notes, item descriptions and HUD text. Plain backgrounds are filled, textured ones are repaired, so the original disappears without a visible box. The first translation of a screen takes a few seconds, repeats are instant ([#25](https://github.com/keremss7/lingolay/pull/25)).
+- Faster batch translation with the NLLB models.
+
 ## [2.4.1] — 2026-10-22
 
 ### Fixed
