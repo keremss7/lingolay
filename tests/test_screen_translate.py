@@ -70,9 +70,16 @@ def test_font_size_does_not_depend_on_descenders():
     assert font_size_of(OcrLine('Save Game', 0, 0, 100, 25)) == pytest.approx(font_size_of(OcrLine('Quest Log', 0, 0, 100, 32)), rel=0.05)
 
 
+def _bright_box(frame, x0, y0, x1, y1, threshold=200):
+    """Bounding box of the bright (text) pixels in a region: font metrics differ between platforms."""
+    ys, xs = np.nonzero(frame[y0:y1, x0:x1].mean(axis=2) > threshold)
+    return int(x0 + xs.min()), int(y0 + ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1)
+
+
 def test_plain_panel_is_covered_with_its_own_color(qapp):
     frame = _scene(qapp)
-    style = analyze(frame, (98, 196, 150, 32), 32)  # "Inventory" on the dark menu panel
+    box = _bright_box(frame, 70, 185, 430, 240)  # "Inventory" on the dark menu panel
+    style = analyze(frame, box, box[3])
     assert style.flat
     assert style.patch.reshape(-1, 3).std(axis=0).max() < 2  # the text is gone, only the panel color remains
     assert style.outline is None
@@ -111,6 +118,18 @@ def test_windows_ocr_finds_the_game_texts(qapp):
     if not ocr.is_available():
         pytest.skip('Windows OCR unavailable')
     frame = _scene(qapp)
+    import warnings
+
+    from lingolay.ocr.windows_ocr import _run_async_in_loop
+    try:
+        raw = _run_async_in_loop(ocr._recognize_raw(frame))
+        diag = f'raw lines={len(raw.lines)}'
+        if raw.lines:
+            w = raw.lines[0].words[0]
+            diag += f' first word={w.text!r} rect attrs={[a for a in dir(w.bounding_rect) if not a.startswith("_")]}'
+    except Exception as e:  # diagnostics for CI
+        diag = f'raw error {type(e).__name__}: {e}'
+    warnings.warn(f'plain text: {ocr.recognize(frame)[:120]!r}; {diag}', stacklevel=1)
     blocks = group_blocks(ocr.recognize_layout(frame))
     texts = [b.text.lower() for b in blocks]
     found = [e for e in EXPECTED if any(e.lower()[:12] in t for t in texts)]
