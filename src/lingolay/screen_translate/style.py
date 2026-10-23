@@ -14,7 +14,7 @@ import numpy as np
 FLAT_MAX_STD = 8.0      # ring brightness spread below which the background counts as plain
 TEXT_MIN_DIST = 40.0    # color distance from the background that counts as text
 OUTLINE_MIN_DIFF = 110  # brightness gap between a glyph's edge and its inside that means an outline
-BOLD_MIN_STROKE = 0.13  # stroke width / line height above which the text counts as bold
+BOLD_MIN_STROKE = 0.155  # stroke width / font size above which text counts as bold (measured: regular ~0.13, bold ~0.18)
 PAD_FACTOR = 0.18       # padding around the OCR box, relative to line height
 PAD_X_FACTOR = 0.45     # more on the sides: OCR boxes often leave out trailing punctuation
 
@@ -45,8 +45,8 @@ def _ring(frame, x0, y0, x1, y1, width):
     return outer[mask.reshape(-1)]
 
 
-def analyze(frame, rect, line_height):
-    """BlockStyle for the block at rect=(x, y, w, h) in a BGR frame."""
+def analyze(frame, rect, line_height, font_size=None):
+    """BlockStyle for the block at rect=(x, y, w, h) in a BGR frame; font_size: estimated, in px."""
     H, W = frame.shape[:2]
     pad = max(2, int(round(line_height * PAD_FACTOR)))
     pad_x = max(pad, int(round(line_height * PAD_X_FACTOR)))
@@ -70,7 +70,7 @@ def analyze(frame, rect, line_height):
         depth = cv2.distanceTransform(text_mask.astype(np.uint8), cv2.DIST_L2, 3)
         inner = text_mask & (depth >= np.percentile(depth[text_mask], 70))
         stroke = 2 * float(np.percentile(depth[text_mask], 90))  # typical stroke width in px
-        bold = stroke / max(1.0, line_height) > BOLD_MIN_STROKE
+        bold = stroke / max(1.0, font_size or line_height / 0.85) > BOLD_MIN_STROKE
         middle = float(np.median(lum[inner]))
         # the purest part of the fill: inner pixels on the far side of their median (away from blending)
         core = inner & ((lum >= middle) if middle >= float(bg.mean()) else (lum <= middle))

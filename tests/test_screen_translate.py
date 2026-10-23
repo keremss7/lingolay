@@ -76,15 +76,21 @@ def _bright_box(frame, x0, y0, x1, y1, threshold=200):
     return int(x0 + xs.min()), int(y0 + ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1)
 
 
+def _dark_box(frame, x0, y0, x1, y1, threshold=80):
+    ys, xs = np.nonzero(frame[y0:y1, x0:x1].mean(axis=2) < threshold)
+    return int(x0 + xs.min()), int(y0 + ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1)
+
+
 def test_plain_panel_is_covered_with_its_own_color(qapp):
     frame = _scene(qapp)
     box = _bright_box(frame, 70, 185, 430, 240)  # "Inventory" on the dark menu panel
-    style = analyze(frame, box, box[3])
+    style = analyze(frame, box, box[3], font_size_of(OcrLine('Inventory', *box)))
     assert style.flat
     assert style.patch.reshape(-1, 3).std(axis=0).max() < 2  # the text is gone, only the panel color remains
     assert style.outline is None
     assert not style.bold
-    button = analyze(frame, (1367, 802, 116, 22), 22)  # bold "Continue" on the orange button
+    box = _dark_box(frame, 1310, 790, 1540, 840)  # bold "Continue" on the orange button
+    button = analyze(frame, box, box[3], font_size_of(OcrLine('Continue', *box)))
     assert button.bold and button.flat and button.free_left <= 1305 and button.free_right >= 1545
     assert max(style.text) > 200 and max(style.background) < 60  # light text on a dark panel
 

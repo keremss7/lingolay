@@ -26,7 +26,7 @@ def build_items(frame, lines, translate, skip_rects=()):
         translation = (translate(block.text) or '').strip()
         if not translation or translation.casefold() == block.text.casefold():
             continue  # untranslated or already in the target language: leave the original alone
-        items.append(LensItem(analyze(frame, rect, block.line_height), rect, block.line_height, translation,
+        items.append(LensItem(analyze(frame, rect, block.line_height, block.font_size), rect, block.line_height, translation,
                               font_size=block.font_size, line_count=len(block.lines), align=_alignment(block, blocks)))
     return items
 
