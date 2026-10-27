@@ -168,3 +168,12 @@ def test_hotkey_flow_shows_and_hides_the_translation(qapp, qtbot, monkeypatch):
     with qtbot.waitSignal(st_not_ready.failed, timeout=2000) as failed:
         st_not_ready.toggle()
     assert failed.args == ['translator']
+
+    black = np.zeros_like(frame)
+    st_black = ScreenTranslator(lambda: FakeTranslator(), lambda: 'en-US', lambda: [])
+    monkeypatch.setattr(ScreenTranslator, '_capture', staticmethod(lambda screen: (black, 1.0)))
+    with qtbot.waitSignal(st_black.failed, timeout=5000) as failed:
+        st_black.toggle()
+    assert failed.args == ['black']  # exclusive fullscreen: a hint instead of an empty overlay
+    qtbot.waitUntil(lambda: st_black.active, timeout=2000)
+    st_black.hide()

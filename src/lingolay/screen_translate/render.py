@@ -150,25 +150,40 @@ class LensOverlay(QWidget):
                          | Qt.WindowType.Tool | Qt.WindowType.WindowTransparentForInput)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
-        self._items, self._scale, self._busy = [], 1.0, False
+        self._items, self._scale, self._busy, self._message = [], 1.0, False, None
+        from PySide6.QtCore import QTimer
+        self._message_timer = QTimer(self)
+        self._message_timer.setSingleShot(True)
+        self._message_timer.timeout.connect(self.clear)
+
+    def show_message(self, screen, text, seconds=6):
+        """A short hint in the corner pill (e.g. why nothing could be read), hidden after a few seconds."""
+        self._items, self._busy, self._message = [], True, text
+        self.setGeometry(screen.geometry())
+        self.show()
+        self._apply_win32()
+        self.update()
+        self._message_timer.start(int(seconds * 1000))
 
     def show_busy(self, screen):
         """A small 'Translating…' pill in the corner while the first translation is prepared."""
-        self._items, self._busy = [], True
+        self._items, self._busy, self._message = [], True, None
         self.setGeometry(screen.geometry())
         self.show()
         self._apply_win32()
         self.update()
 
     def show_items(self, screen, items, scale):
-        self._items, self._scale, self._busy = items, scale, False
+        self._items, self._scale, self._busy, self._message = items, scale, False, None
+        self._message_timer.stop()
         self.setGeometry(screen.geometry())
         self.show()
         self._apply_win32()
         self.update()
 
     def clear(self):
-        self._items, self._busy = [], False
+        self._items, self._busy, self._message = [], False, None
+        self._message_timer.stop()
         self.hide()
 
     @property
@@ -198,7 +213,7 @@ class LensOverlay(QWidget):
             font.setWeight(QFont.Weight.DemiBold)
             painter.setFont(font)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            label = '🔎  ' + t('Translating…')
+            label = ('⚠️  ' + self._message) if self._message else ('🔎  ' + t('Translating…'))
             w = QFontMetricsF(font).horizontalAdvance(label) + 28
             pill = QRectF(self.width() - w - 24, 24, w, 34)
             painter.setPen(Qt.PenStyle.NoPen)

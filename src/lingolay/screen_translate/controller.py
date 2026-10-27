@@ -93,7 +93,7 @@ class ScreenTranslator(QObject):
         self._busy = False
         self.finished.connect(self._show)
         self.captured.connect(self._overlay.show_busy)
-        self.failed.connect(lambda _e: self._overlay.clear())
+        self.failed.connect(self._on_failed)
 
     @property
     def active(self):
@@ -119,6 +119,9 @@ class ScreenTranslator(QObject):
         try:
             t0 = time.perf_counter()
             frame, scale = self._capture(screen)
+            if int(frame[::8, ::8].max()) <= 12:
+                self.failed.emit('black')  # exclusive fullscreen: Windows shows us nothing
+                return
             self.captured.emit(screen)
             t1 = time.perf_counter()
             lines = find_lines(self._ocr_engine(), frame)
@@ -166,6 +169,15 @@ class ScreenTranslator(QObject):
     def _show(self, items, screen, scale, _summary):
         if items:
             self._overlay.show_items(screen, items, scale)
+        else:
+            self._overlay.clear()
+
+    def _on_failed(self, error):
+        if error == 'black':
+            from PySide6.QtGui import QCursor, QGuiApplication
+            screen = QGuiApplication.screenAt(QCursor.pos()) or QGuiApplication.primaryScreen()
+            from lingolay.i18n import t
+            self._overlay.show_message(screen, t('The game screen looks black. Switch the game to Borderless or Windowed mode.'))
         else:
             self._overlay.clear()
 

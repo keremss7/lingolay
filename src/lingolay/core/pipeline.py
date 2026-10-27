@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 # If the mean pixel difference between two sampled frames is below this,
 # the screen is considered unchanged and OCR is skipped.
 FRAME_DIFF_THRESHOLD = 1.5
+BLACK_MAX_LEVEL = 12        # brightest sampled pixel of a frame that counts as black
+BLACK_HINT_SECONDS = 6.0    # a fully black capture this long means the game is in exclusive fullscreen
 _SENTENCE_END = ('.', '!', '?', '…', '。', '！', '？')
 _SENTENCE_SPLIT = re.compile(r'(?<=[.!?…])\s+|(?<=[。！？])\s*')
 
@@ -142,6 +144,7 @@ class Pipeline(QObject):
     ocr_text_ready = Signal(str)
     status_updated = Signal(object)
     error_occurred = Signal(str)
+    capture_black = Signal()       # the captured region stays fully black (exclusive fullscreen)
     translator_loading = Signal()
     translator_ready = Signal()
     translator_failed = Signal(str)
@@ -170,6 +173,7 @@ class Pipeline(QObject):
         self._last_monitor_index = 0
         self._last_dpi_scale = 1.0
         self._last_frame_sample = None
+        self._black_since, self._black_warned = None, False
         self._translated_sentences = {}
         self._recent_translations = deque(maxlen=12)
         self._capture.frame_ready.connect(self._on_frame)
@@ -233,6 +237,7 @@ class Pipeline(QObject):
         self._translated_sentences.clear()
         self._recent_translations.clear()
         self._last_frame_sample = None
+        self._black_since, self._black_warned = None, False
         self._frame_count_debug = 0
         self._status.is_running = True
         self._capture.start_capture()
@@ -303,6 +308,7 @@ class Pipeline(QObject):
         # Frame-diff: if the screen did not change, skip OCR and only poll the pending subtitle.
         img = frame.image
         channel = img[::8, ::8, 0] if img.ndim == 3 else img[::8, ::8]
+        self._check_black(img)
         frame_sample = channel.astype(np.int16)
         if self._last_frame_sample is not None and self._last_frame_sample.shape == frame_sample.shape:
             diff = float(np.mean(np.abs(frame_sample - self._last_frame_sample)))
@@ -333,6 +339,21 @@ class Pipeline(QObject):
         process_ms = int((time.perf_counter() - start) * 1000)
         self._capture.report_processing_time(process_ms)
         self._emit_status()
+
+    def _check_black(self, img):
+        """Warn once per run when the capture stays completely black (the game hides its screen)."""
+        if self._black_warned:
+            return
+        if int(img[::8, ::8].max()) > BLACK_MAX_LEVEL:
+            self._black_since = None
+            return
+        now = time.monotonic()
+        if self._black_since is None:
+            self._black_since = now
+        elif now - self._black_since >= BLACK_HINT_SECONDS:
+            self._black_warned = True
+            logger.warning('[Pipeline] Capture has been black for %.0f s — exclusive fullscreen?', now - self._black_since)
+            self.capture_black.emit()
 
     def _dispatch_translation(self, stable):
         """
