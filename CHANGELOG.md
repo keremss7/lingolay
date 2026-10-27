@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.1] — 2026-10-27
+
+### Added
+- **Black-screen hint**: some games run in exclusive fullscreen, where Windows gives screen capture only a black image ([#2](https://github.com/keremss7/lingolay/issues/2)). Lingolay now notices this and shows a tip on the overlay to switch the game to *Borderless* or *Windowed* mode, both for subtitles and for *Translate screen* ([#27](https://github.com/keremss7/lingolay/pull/27)).
+
 ## [2.5.0] — 2026-10-23
 
 ### Added
