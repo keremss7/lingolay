@@ -98,3 +98,28 @@ def test_voice_picker_lists_the_target_language_voices_and_saves_the_choice(qapp
     w._region_selector.close()
     w.deleteLater()
     qapp.processEvents()
+
+
+def test_black_capture_warns_once(qapp, monkeypatch):
+    import numpy as np
+
+    from lingolay.core import pipeline as pl
+    p = pl.Pipeline(qapp)
+    now = [100.0]
+    monkeypatch.setattr(pl.time, 'monotonic', lambda: now[0])
+    warned = []
+    p.capture_black.connect(lambda: warned.append(1))
+    black, game = np.zeros((90, 160, 3), np.uint8), np.full((90, 160, 3), 80, np.uint8)
+    p._check_black(black)
+    now[0] += 4
+    p._check_black(game)  # a real frame in between resets the timer
+    now[0] += 1
+    p._check_black(black)
+    now[0] += pl.BLACK_HINT_SECONDS - 1
+    p._check_black(black)
+    assert warned == []
+    now[0] += 2
+    p._check_black(black)
+    now[0] += 30
+    p._check_black(black)
+    assert warned == [1]  # once per run

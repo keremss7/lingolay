@@ -1141,6 +1141,7 @@ class MainWindow(QMainWindow):
         p.ocr_text_ready.connect(self._on_ocr_text)
         p.status_updated.connect(self._on_status_update)
         p.error_occurred.connect(lambda msg: self._sb.showMessage(msg, 5000))
+        p.capture_black.connect(self._on_capture_black)
         p.translator_loading.connect(self._on_tr_loading)
         p.translator_ready.connect(self._on_tr_ready)
         p.translator_failed.connect(self._on_tr_failed)
@@ -1333,8 +1334,16 @@ class MainWindow(QMainWindow):
         else:
             self._sb.showMessage(t('No text to translate was found on the screen.'), 4000)
 
+    def _on_capture_black(self):
+        """The capture stays black: tell the player in the overlay, which sits over the game."""
+        message = t('The game screen looks black. Switch the game to Borderless or Windowed mode.')
+        self._overlay.set_error(message)
+        self._sb.showMessage(message, 15000)
+
     def _on_screen_translate_failed(self, error):
-        if error == 'translator':
+        if error == 'black':
+            self._sb.showMessage(t('The game screen looks black. Switch the game to Borderless or Windowed mode.'), 10000)
+        elif error == 'translator':
             self._sb.showMessage(t('The translator is not ready yet, please wait'), 5000)
         else:
             self._sb.showMessage(t('Translation error: {error}', error=error), 8000)
