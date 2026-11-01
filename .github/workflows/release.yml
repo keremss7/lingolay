@@ -36,7 +36,7 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/Lingolay/* -DestinationPath "Lingolay-${{ github.ref_name }}-windows-x64.zip"
       # Manual runs on a branch: keep the zip as a downloadable test build instead of publishing a release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
           name: Lingolay-test-build-windows-x64
