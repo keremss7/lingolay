@@ -1,6 +1,6 @@
 import pytest
 
-from lingolay.text.cleaning import clean_ocr_text, has_turkish_content, is_garbage, is_ui_noise, normalize_text, seq_ratio
+from lingolay.text.cleaning import clean_ocr_text, has_turkish_content, is_garbage, is_ui_noise, normalize_text, seq_ratio, split_speaker
 
 
 @pytest.mark.parametrize('raw, expected', [
@@ -61,3 +61,30 @@ def test_ui_noise_does_not_match_times_inside_sentences():
 def test_seq_ratio_tolerates_ocr_fusion():
     assert seq_ratio('So this is sea otter meat', 'So this islsa otter meat') > 0.85
     assert seq_ratio('hello', 'goodbye') < 0.5
+
+
+def test_split_speaker_colon_format():
+    speaker, dialogue = split_speaker('Kenji: Open the door')
+    assert speaker == 'Kenji'
+    assert dialogue == 'Open the door'
+
+
+def test_split_speaker_multiline_formats():
+    speaker, dialogue = split_speaker('Gatekeeper\nHow can this happen?')
+    assert speaker == 'Gatekeeper'
+    assert dialogue == 'How can this happen?'
+
+    speaker, dialogue = split_speaker('Voice from the Gauntlet\nCome closer.')
+    assert speaker == 'Voice from the Gauntlet'
+    assert dialogue == 'Come closer.'
+
+    speaker, dialogue = split_speaker('boss —\nRun!')
+    assert speaker == 'boss'
+    assert dialogue == 'Run!'
+
+
+def test_split_speaker_no_speaker():
+    assert split_speaker('Wait!\nGo now.') == (None, 'Wait!\nGo now.')
+    assert split_speaker('Yes, sir\nRight away.') == (None, 'Yes, sir\nRight away.')
+    assert split_speaker('13:45\nHello there.') == (None, '13:45\nHello there.')
+    assert split_speaker('Open the door.') == (None, 'Open the door.')

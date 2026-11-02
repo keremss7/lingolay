@@ -1137,6 +1137,7 @@ class MainWindow(QMainWindow):
     def _connect_all(self):
         p = self._pipeline
         p.translation_ready.connect(self._on_translation)
+        p.subtitle_cleared.connect(self._overlay.clear)
         p.translation_error.connect(self._on_translation_error)
         p.ocr_text_ready.connect(self._on_ocr_text)
         p.status_updated.connect(self._on_status_update)
@@ -1632,10 +1633,10 @@ class MainWindow(QMainWindow):
 
     # ── Pipeline signals ──────────────────────────────────────────────
     def _on_translation(self, text):
-        self._overlay.set_translation(text)
+        if self._pipeline.subtitle_visible:
+            self._overlay.set_translation(text, self._pipeline.current_speaker)
         if self._tts_engine and self._tts_engine.is_enabled:
             self._tts_engine.speak(text)
-
     def _on_translation_error(self, msg):
         first_line = (msg or t('Unknown error')).split('\n')[0][:200]
         self._sb.showMessage(t('Translation error: {error}', error=first_line), 6000)

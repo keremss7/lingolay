@@ -98,7 +98,7 @@ class ScreenCapture(QThread):
         if not settings.adaptive_interval:
             return
         if time_ms > self._current_interval_ms:
-            self._current_interval_ms = min(settings.max_interval_ms, self._current_interval_ms + 50)
+            self._current_interval_ms = min(350, self._current_interval_ms + 50)
         elif time_ms < self._current_interval_ms * 0.5:
             self._current_interval_ms = max(settings.min_interval_ms, self._current_interval_ms - 25)
 

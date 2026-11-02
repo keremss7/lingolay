@@ -59,6 +59,75 @@ def normalize_text(text):
     return text
 
 
+def split_speaker(raw_text: str):
+    """
+    Split raw OCR text into (speaker, dialogue).
+    Works on raw OCR text (preserving line breaks) before clean_ocr_text.
+    Returns (speaker_name or None, dialogue_text).
+    """
+    if not raw_text or not raw_text.strip():
+        return (None, raw_text)
+
+    lines = [ln for ln in raw_text.splitlines() if ln.strip()]
+    if not lines:
+        return (None, raw_text)
+
+    first_line = lines[0].strip()
+
+    # Form A: Speaker: Dialogue (colon preceded by at most 3 words, each capitalized)
+    # Reject digits to avoid timestamps like 13:45
+    if ':' in first_line:
+        left, colon, right = first_line.partition(':')
+        left_stripped = left.strip()
+        if left_stripped and not any(c.isdigit() for c in left_stripped):
+            words = left_stripped.split()
+            if 1 <= len(words) <= 3 and all(w[0].isupper() and w.isalpha() for w in words):
+                dialogue_first = right.strip()
+                rest_lines = lines[1:]
+                if dialogue_first:
+                    dialogue_lines = [dialogue_first] + rest_lines
+                else:
+                    dialogue_lines = rest_lines
+                dialogue = '\n'.join(dialogue_lines).strip()
+                if dialogue:
+                    return (left_stripped, dialogue)
+
+    # Form B: First line is at most 5 words, starts capitalized, does not end in .?!,…
+    # Underneath there is dialogue text. Conjunctions can be lowercase.
+    # Accepts trailing dash like 'Patron —'.
+    # Disallows digits ('rakamlı satır', '13:45'), punctuation endings ('Wait!', 'No.', 'Yes, sir').
+    if len(lines) >= 2:
+        candidate = first_line
+        # Check trailing dash
+        name_clean = candidate.rstrip(' -—–').strip()
+        # Must not end in sentence/clause punctuation (. ? ! , … or ...)
+        invalid_endings = ('.', '?', '!', ',', '…')
+        if not candidate.endswith(invalid_endings) and not candidate.endswith('...') and not name_clean.endswith(invalid_endings):
+            if not any(c.isdigit() for c in candidate):
+                words = name_clean.split()
+                # In addition to capitalized words, trailing dash explicitly marks a speaker name even if lowercase (e.g. 'boss —')
+                has_trailing_dash = any(candidate.endswith(d) for d in ('-', '—', '–')) or any(candidate.rstrip().endswith(d) for d in ('-', '—', '–'))
+                if 1 <= len(words) <= 5 and (words[0][0].isupper() or has_trailing_dash):
+                    conjunctions = {'and', 'or', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'from', 'with', 'by', 'a', 'an', 've', 'ile', 'de', 'da', 'den', 'dan'}
+                    valid_words = True
+                    for i, w in enumerate(words):
+                        clean_w = w.strip('\'"')
+                        if not clean_w:
+                            valid_words = False
+                            break
+                        if i > 0 and clean_w.lower() in conjunctions:
+                            continue
+                        if not (clean_w.isalpha() and (has_trailing_dash or clean_w[0].isupper())):
+                            valid_words = False
+                            break
+                    if valid_words:
+                        dialogue = '\n'.join(lines[1:]).strip()
+                        if dialogue:
+                            return (name_clean, dialogue)
+
+    return (None, raw_text)
+
+
 def clean_ocr_text(text, source_lang='en'):
     """Fix common OCR mistakes and normalize formatting."""
     if not text:
@@ -438,6 +507,12 @@ class TextStabilizer:
         self._episode_started = False
         self._incremental_mode = False
 
+    def forget_visible(self):
+        """Forget current visible line and recent translated history so repeated dialogue translates again."""
+        self._translated_texts.clear()
+        self._last_normalized = ''
+        self._last_cleaned = ''
+        self._consecutive_count = 0
     def _is_recently_translated(self, normalized):
         """Check if this normalized text was translated recently."""
         now = time.time()
@@ -462,3 +537,7 @@ class TextStabilizer:
     @property
     def current_count(self):
         return self._consecutive_count
+
+def subtitle_lines(text: str) -> str:
+    """Format subtitle text for display by splitting sentences onto new lines without breaking ellipses."""
+    return re.sub(r'(?<=[^.][.!?])\s+(?=[^\W\d_])', '\n', text.strip())

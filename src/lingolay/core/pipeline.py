@@ -21,6 +21,7 @@ from lingolay.core.config import get_settings, save_settings
 from lingolay.i18n import t
 from lingolay.ocr import create_ocr_engine
 from lingolay.preprocessing.filters import ImagePreprocessor
+from lingolay.text.cleaning import clean_ocr_text, is_garbage, is_ui_noise, split_speaker
 from lingolay.text.stabilizer import TextStabilizer, seq_ratio
 from lingolay.text.turkish_postprocess import post_process_turkish
 from lingolay.translation import create_translator
@@ -64,8 +65,7 @@ class PipelineStatus:
 
 
 class TranslationWorker(QThread):
-    """Loads the translation engine and translates the latest request (older requests are dropped)."""
-    translation_ready = Signal(str)
+    translation_ready = Signal(str, int)
     translation_error = Signal(str)
     translator_loaded = Signal()
     translator_failed = Signal(str)
@@ -101,10 +101,11 @@ class TranslationWorker(QThread):
             if self._stop:
                 return
             with self._lock:
-                text = self._pending
+                req = self._pending
                 self._pending = None
-            if not text:
+            if not req:
                 continue
+            text, req_gen = req
             try:
                 result = self._translator.translate(text)
                 if result.error:
@@ -114,7 +115,7 @@ class TranslationWorker(QThread):
                     out = result.text
                     if settings.target_lang == 'tr':
                         out = post_process_turkish(out)
-                    self.translation_ready.emit(out)
+                    self.translation_ready.emit(out, req_gen)
                 else:
                     logger.warning('Empty translation result for: %r', text[:60])
                     self.translation_error.emit(t('Empty translation result — check the source/target language settings.'))
@@ -122,10 +123,10 @@ class TranslationWorker(QThread):
                 logger.exception('Translation exception')
                 self.translation_error.emit(t('Translation error: {error}', error=e))
 
-    def request_translation(self, text):
+    def request_translation(self, text, gen=0):
         """Queue a translation request (replaces any pending request)."""
         with self._lock:
-            self._pending = text
+            self._pending = (text, gen)
         self._event.set()
 
     def stop(self):
@@ -140,6 +141,7 @@ class TranslationWorker(QThread):
 
 class Pipeline(QObject):
     translation_ready = Signal(str)
+    subtitle_cleared = Signal()
     translation_error = Signal(str)
     ocr_text_ready = Signal(str)
     status_updated = Signal(object)
@@ -176,9 +178,14 @@ class Pipeline(QObject):
         self._black_since, self._black_warned = None, False
         self._translated_sentences = {}
         self._recent_translations = deque(maxlen=12)
+        self._text_visible = False
+        self._last_real_text_time = 0.0
+        self._last_ocr_had_text = False
+        self._subtitle_generation = 0
+        self._current_speaker = None
+        self._frame_speaker = None
         self._capture.frame_ready.connect(self._on_frame)
         self._capture.error_occurred.connect(self._on_capture_error)
-
     # ── Lifecycle ──────────────────────────────────────────────────────
     def initialize(self):
         """Initialize OCR engine and start the translation worker. Call once at startup."""
@@ -205,6 +212,12 @@ class Pipeline(QObject):
         self._stabilizer.reset()
         self._translated_sentences.clear()
         self._recent_translations.clear()
+        self._text_visible = False
+        self._last_real_text_time = 0.0
+        self._last_ocr_had_text = False
+        self._subtitle_generation = 0
+        self._current_speaker = None
+        self._frame_speaker = None
         self._last_frame_sample = None
         self._last_region = (x, y, width, height)
         self._last_monitor_index = monitor_index
@@ -236,6 +249,12 @@ class Pipeline(QObject):
         self._stabilizer.reset()
         self._translated_sentences.clear()
         self._recent_translations.clear()
+        self._text_visible = False
+        self._last_real_text_time = 0.0
+        self._last_ocr_had_text = False
+        self._subtitle_generation = 0
+        self._current_speaker = None
+        self._frame_speaker = None
         self._last_frame_sample = None
         self._black_since, self._black_warned = None, False
         self._frame_count_debug = 0
@@ -248,6 +267,12 @@ class Pipeline(QObject):
         self._status.is_running = False
         self._capture.stop_capture()
         self._stabilizer.reset()
+        self._text_visible = False
+        self._last_real_text_time = 0.0
+        self._last_ocr_had_text = False
+        self._subtitle_generation = 0
+        self._current_speaker = None
+        self._frame_speaker = None
         self._emit_status()
 
     def set_preview_mode(self, enabled):
@@ -316,6 +341,7 @@ class Pipeline(QObject):
                 pending = self._stabilizer.poll_pending()
                 if pending is not None:
                     self._dispatch_translation(pending)
+                self._check_subtitle_gone()
                 self._update_fps()
                 return
         self._last_frame_sample = frame_sample.copy()
@@ -330,11 +356,31 @@ class Pipeline(QObject):
 
         if self._preview_mode:
             self.ocr_text_ready.emit(raw_text)
-        elif raw_text.strip():
-            stable = self._stabilizer.process(raw_text)
-            if stable.is_stable:
-                self._dispatch_translation(stable)
+        else:
+            yazi_var = False
+            speaker, dialogue = split_speaker(raw_text)
+            self._frame_speaker = speaker
+            ocr_eval_text = dialogue if speaker is not None else raw_text
 
+            if ocr_eval_text.strip():
+                cleaned = clean_ocr_text(ocr_eval_text, get_settings().source_lang)
+                if (
+                    cleaned.strip()
+                    and not self._is_own_translation(cleaned)
+                    and not is_garbage(cleaned, get_settings().source_lang, get_settings().target_lang)
+                    and not is_ui_noise(cleaned)
+                ):
+                    yazi_var = True
+
+            self._last_ocr_had_text = yazi_var
+            if yazi_var:
+                self._last_real_text_time = time.time()
+
+            if ocr_eval_text.strip():
+                stable = self._stabilizer.process(ocr_eval_text)
+                if stable.is_stable:
+                    self._dispatch_translation(stable)
+            self._check_subtitle_gone()
         self._update_fps()
         process_ms = int((time.perf_counter() - start) * 1000)
         self._capture.report_processing_time(process_ms)
@@ -368,10 +414,10 @@ class Pipeline(QObject):
         text = self._extract_new_sentences(stable.text)
         if not text:
             return
+        self._current_speaker = self._frame_speaker
         logger.info('[Pipeline] → Translating: %r', text[:80])
         if self._translation_worker:
-            self._translation_worker.request_translation(text)
-
+            self._translation_worker.request_translation(text, self._subtitle_generation)
     @staticmethod
     def _flatten(text):
         return re.sub(r'\s+', ' ', text.replace('\n', ' ')).strip().lower()
@@ -460,10 +506,43 @@ class Pipeline(QObject):
         return flat
 
     # ── Signal handlers ────────────────────────────────────────────────
-    def _on_translation(self, text):
+    @property
+    def subtitle_visible(self) -> bool:
+        return self._text_visible
+
+    @property
+    def current_speaker(self):
+        return self._current_speaker
+
+    def _check_subtitle_gone(self):
+        settings = get_settings()
+        if (
+            settings.subtitle_clear_enabled
+            and self._text_visible
+            and not self._last_ocr_had_text
+            and (time.time() - self._last_real_text_time) >= (settings.subtitle_clear_ms / 1000.0)
+        ):
+            self._text_visible = False
+            self._subtitle_generation += 1
+            self._current_speaker = None
+            self._stabilizer.forget_visible()
+            self._translated_sentences.clear()
+            self._recent_translations.clear()
+            self.subtitle_cleared.emit()
+
+    # ── Signal handlers ────────────────────────────────────────────────
+    def _on_translation(self, text, req_gen=None):
         logger.info('[Pipeline] ← Translation: %r', text[:80])
         self._recent_translations.append((self._flatten(text), time.time()))
         self._status.current_translation = text
+        if req_gen is not None:
+            if req_gen == self._subtitle_generation and self._last_ocr_had_text:
+                self._text_visible = True
+            else:
+                self._text_visible = False
+        else:
+            if self._last_ocr_had_text:
+                self._text_visible = True
         self.translation_ready.emit(text)
         if self._translation_worker and self._translation_worker.translator:
             self._status.translate_latency_ms = self._translation_worker.translator.last_latency_ms

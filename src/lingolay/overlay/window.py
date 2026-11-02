@@ -2,12 +2,13 @@ import ctypes
 import math
 import sys
 
-from PySide6.QtCore import QPoint, Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QTextDocument
 from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QLabel, QVBoxLayout, QWidget
 
 from lingolay.core.config import get_settings
 from lingolay.i18n import t
+from lingolay.text.cleaning import subtitle_lines
 
 _HWND_TOPMOST = -1
 _GWL_EXSTYLE = -20
@@ -40,7 +41,10 @@ def _w32_apply(hwnd, click_through):
         ex &= ~_WS_EX_TRANSPARENT
     user32.SetWindowLongW(hwnd, _GWL_EXSTYLE, ex)
     user32.SetWindowPos(hwnd, _HWND_TOPMOST, 0, 0, 0, 0, _SWP_FLAGS)
-
+    try:
+        user32.SetWindowDisplayAffinity(hwnd, 0x11)  # WDA_EXCLUDEFROMCAPTURE: our own capture never sees it
+    except Exception:
+        pass
 
 class OutlineLabel(QLabel):
     """Label that draws outlined text when the background box is disabled."""
@@ -91,20 +95,22 @@ class OutlineLabel(QLabel):
 
     @staticmethod
     def _wrap(text, fm, max_w):
-        """Word-based line wrapping."""
-        lines = []
-        cur = ''
-        for w in text.split():
-            test = (cur + ' ' + w).strip()
-            if cur and fm.horizontalAdvance(test) > max_w:
-                lines.append(cur)
-                cur = w
-            else:
-                cur = test
-        if cur:
-            lines.append(cur)
-        return lines or [text]
-
+        """Word-based line wrapping preserving explicit newlines."""
+        all_lines = []
+        for raw_line in text.split('\n'):
+            cur = ''
+            for w in raw_line.split():
+                test = (cur + ' ' + w).strip()
+                if cur and fm.horizontalAdvance(test) > max_w:
+                    all_lines.append(cur)
+                    cur = w
+                else:
+                    cur = test
+            if cur:
+                all_lines.append(cur)
+            elif not raw_line.strip():
+                all_lines.append('')
+        return all_lines or [text]
 
 class OverlayWindow(QWidget):
     """Always-on-top, non-activating, draggable translation window."""
@@ -119,7 +125,7 @@ class OverlayWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._current_text = ''
-        self._drag_position = QPoint()
+        self._current_speaker = None
         self._is_dragging = False
         self._base_font_size = 18
         self._setup_window()
@@ -161,6 +167,11 @@ class OverlayWindow(QWidget):
         self._mode_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._mode_label.hide()
         con_lay.addWidget(self._mode_label)
+        self._speaker_label = OutlineLabel()
+        self._speaker_label.setObjectName('speaker_label')
+        self._speaker_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._speaker_label.hide()
+        con_lay.addWidget(self._speaker_label)
         self._text_label = OutlineLabel()
         self._text_label.setObjectName('text_label')
         self._text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -199,17 +210,21 @@ class OverlayWindow(QWidget):
         bg_b = int(bg_hex[4:6], 16)
         bg_a = ov.backdrop_alpha if ov.backdrop else 0
         border = '2px solid rgba(255,255,255,0.12)' if ov.backdrop else 'none'
-        self._container.setStyleSheet(f"""
-            QWidget#overlay_container {{
-                background: rgba({bg_r},{bg_g},{bg_b},{bg_a});
-                border-radius: 12px;
-                border: {border};
-                padding: {ov.padding}px;
-            }}
-        """)
+        if not self._current_text and not self._mode_label.isVisible():
+            self._container.setStyleSheet("QWidget#overlay_container { background: transparent; border: none; padding: 0px; }")
+        else:
+            self._container.setStyleSheet(f"""
+                QWidget#overlay_container {{
+                    background: rgba({bg_r},{bg_g},{bg_b},{bg_a});
+                    border-radius: 12px;
+                    border: {border};
+                    padding: {ov.padding}px;
+                }}
+            """)
         self._text_label.setStyleSheet(self._text_label_style(ov, ov.font_size))
         self._text_label.setFont(QFont(ov.font_family, ov.font_size, QFont.Weight.Bold))
         self._text_label.configure(use_outline=not ov.backdrop, fill=ov.text_color, outline=ov.outline_color, outline_w=ov.outline_width)
+        self._speaker_label.configure(use_outline=not ov.backdrop, fill=ov.text_color, outline=ov.outline_color, outline_w=ov.outline_width)
         self._mode_label.setStyleSheet(f"""
             #mode_label {{
                 color: #ffd700;
@@ -267,11 +282,12 @@ class OverlayWindow(QWidget):
         else:
             self._mode_label.hide()
 
-    def set_translation(self, text):
-        """Anti-flicker: only update when the text actually changes."""
-        if text == self._current_text:
+    def set_translation(self, text, speaker=None):
+        """Anti-flicker: only update when the text or speaker actually changes."""
+        if text == self._current_text and speaker == self._current_speaker:
             return
         self._current_text = text
+        self._current_speaker = speaker
         self._render_current()
 
     def _render_current(self):
@@ -280,15 +296,40 @@ class OverlayWindow(QWidget):
         window to fit. Called both on new text and on style changes (font size
         etc.), so the user does not have to wait for a new subtitle.
         """
-        text = self._current_text
-        scaled = self._get_scaled_font_size(len(text))
+        raw_text = self._current_text
+        text = subtitle_lines(raw_text) if raw_text else ''
+        scaled = self._get_scaled_font_size(len(raw_text))
         ov = get_settings().overlay
         self._text_label.setFont(QFont(ov.font_family, scaled, QFont.Weight.Bold))
         self._text_label.setStyleSheet(self._text_label_style(ov, scaled))
         self._text_label.setText(text)
+
+        if not raw_text or not self._current_speaker:
+            self._speaker_label.setText('')
+            self._speaker_label.hide()
+        else:
+            speaker_size = max(11, int(scaled * 0.7))
+            self._speaker_label.setFont(QFont(ov.font_family, speaker_size, QFont.Weight.Bold))
+            self._speaker_label.setStyleSheet(f"""
+                #speaker_label {{
+                    color: {ov.text_color};
+                    font-family: "{ov.font_family}";
+                    font-size: {speaker_size}px;
+                    font-weight: bold;
+                    background: transparent;
+                }}
+            """)
+            self._speaker_label.setText(self._current_speaker)
+            self._speaker_label.show()
+
+        self._apply_style()
         self._smart_resize()
 
     def set_error(self, message):
+        self._current_speaker = None
+        if hasattr(self, '_speaker_label'):
+            self._speaker_label.setText('')
+            self._speaker_label.hide()
         msg = f'⚠️ {message}'
         if self._current_text != msg:
             self._current_text = msg
@@ -296,9 +337,18 @@ class OverlayWindow(QWidget):
             self._smart_resize()
 
     def clear(self):
-        self.set_translation('')
+        self.set_translation('', speaker=None)
 
     def _smart_resize(self):
+        if not self._current_text and not self._mode_label.isVisible():
+            self._text_label.hide()
+            if hasattr(self, '_speaker_label'):
+                self._speaker_label.hide()
+            self._apply_style()
+            self._container.setFixedSize(1, 1)
+            self.setFixedSize(1, 1)
+            return
+        self._text_label.show()
         geo = self._get_screen_geometry()
         if not geo:
             return
@@ -314,6 +364,14 @@ class OverlayWindow(QWidget):
         text_w = min(math.ceil(doc.idealWidth()), avail_text_w)
         doc.setTextWidth(text_w)
         text_h = math.ceil(doc.size().height())
+        speaker_h = 0
+        if hasattr(self, '_speaker_label') and self._speaker_label.isVisible():
+            sdoc = QTextDocument()
+            sdoc.setDefaultFont(self._speaker_label.font())
+            sdoc.setPlainText(self._speaker_label.text())
+            sdoc.setTextWidth(avail_text_w)
+            speaker_h = math.ceil(sdoc.size().height()) + 4
+            text_w = max(text_w, min(math.ceil(sdoc.idealWidth()), avail_text_w))
         mode_h = 0
         if self._mode_label.isVisible():
             mdoc = QTextDocument()
@@ -322,7 +380,7 @@ class OverlayWindow(QWidget):
             mdoc.setTextWidth(max_w - 40)
             mode_h = int(mdoc.size().height()) + 20
         final_w = min(max(text_w + chrome_w, 200), max_w)
-        final_h = text_h + chrome_h + mode_h
+        final_h = text_h + speaker_h + chrome_h + mode_h
         # Keep the bottom-center anchored while resizing
         old = self.geometry()
         old_bottom = old.y() + old.height()
@@ -330,9 +388,13 @@ class OverlayWindow(QWidget):
         # QWidget ignores stylesheet padding, so apply it as layout margins instead
         self._container.layout().setContentsMargins(pad, pad, pad, pad)
         self._text_label.setFixedWidth(final_w - pad * 2)
+        if hasattr(self, '_speaker_label') and self._speaker_label.isVisible():
+            self._speaker_label.setFixedWidth(final_w - pad * 2)
         self._container.setFixedSize(final_w, final_h)
         self.setFixedSize(final_w, final_h)
-        self.move(old_cx - final_w // 2, old_bottom - final_h)
+        new_x = old_cx - final_w // 2
+        new_y = old_bottom - final_h
+        self.move(new_x, new_y)
         self._clamp_to_screen()
 
     def _restore_or_snap_position(self):
@@ -366,11 +428,12 @@ class OverlayWindow(QWidget):
             self.move(nx, ny)
 
     def save_position(self):
+        if not self._current_text and not self._mode_label.isVisible():
+            return
         pos = self.pos()
         ov = get_settings().overlay
         ov.pos_x = pos.x()
         ov.pos_y = pos.y()
-
     def update_appearance(self):
         """Style settings changed — re-apply the style and re-layout the current text."""
         self._apply_style()

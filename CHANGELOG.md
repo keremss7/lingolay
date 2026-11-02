@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.2-afu] — 2026-11-02
+
+### Added
+- The overlay clears shortly after the subtitle leaves the screen, and the overlay is hidden from its own capture.
+- Speaker names are shown on their own smaller line and are not translated or dubbed; subtitle lines keep their breaks at one font size.
+
+### Changed
+- Lower latency defaults: 180 ms settle, 400 ms clear, 350 ms capture ceiling, beam size 1.
+
 ## [2.5.1] — 2026-10-27
 
 ### Added

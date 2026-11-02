@@ -123,3 +123,297 @@ def test_black_capture_warns_once(qapp, monkeypatch):
     now[0] += 30
     p._check_black(black)
     assert warned == [1]  # once per run
+
+
+class _DummyOCR:
+    def __init__(self, text=''):
+        self.text = text
+        self.last_latency_ms = 5
+
+    def recognize(self, img):
+        return self.text
+
+
+def _setup_pipeline_for_test(p, ocr_text='', monkeypatch=None, now_box=None):
+    import numpy as np
+
+    from lingolay.capture.screen import CaptureFrame
+    from lingolay.core import pipeline as pl
+    p._ocr = _DummyOCR(ocr_text)
+    p._status.is_running = True
+    if monkeypatch and now_box:
+        monkeypatch.setattr(pl.time, 'time', lambda: now_box[0])
+
+    def send(text=None, pixel_val=50):
+        if text is not None:
+            p._ocr.text = text
+        img = np.full((64, 64, 3), pixel_val, dtype=np.uint8)
+        frame = CaptureFrame(image=img, timestamp=now_box[0] if now_box else 100.0, monitor_index=0, capture_latency_ms=1)
+        p._on_frame(frame)
+
+    return send
+
+
+def test_subtitle_cleared_after_400ms_blank_frames(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Hello world', monkeypatch, now)
+
+    cleared = []
+    p.subtitle_cleared.connect(lambda: cleared.append(1))
+
+    # 1. Text is on screen and translated
+    send('Hello world', pixel_val=50)
+    p._on_translation('Merhaba dunya', req_gen=p._subtitle_generation)
+    assert p.subtitle_visible
+
+    # Empty frames start
+    now[0] += 0.1
+    send('', pixel_val=60)  # new pixel so OCR runs, sees empty
+    assert cleared == []
+    assert p.subtitle_visible
+
+    # Reach 400ms
+    now[0] += 0.4
+    send('', pixel_val=70)
+    assert cleared == [1]
+    assert not p.subtitle_visible
+    # Further empty frames do not emit again
+    now[0] += 0.5
+    send('', pixel_val=80)
+    assert cleared == [1]
+
+
+def test_single_blank_frame_then_text_no_signal(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'First subtitle', monkeypatch, now)
+
+    cleared = []
+    p.subtitle_cleared.connect(lambda: cleared.append(1))
+
+    send('First subtitle', pixel_val=50)
+    p._on_translation('Ilk altyazi', req_gen=p._subtitle_generation)
+    assert p.subtitle_visible
+
+    # One blank frame (e.g. 100ms)
+    now[0] += 0.1
+    send('', pixel_val=60)
+    assert cleared == []
+
+    # Next frame text appears again
+    now[0] += 0.1
+    send('Second subtitle', pixel_val=70)
+    assert cleared == []
+
+    # Even after 1s from the first text, text is still on screen so no clear
+    now[0] += 1.0
+    send('Second subtitle', pixel_val=70)  # frame diff
+    assert cleared == []
+
+
+def test_static_frame_diff_screen_with_text_for_2s_no_signal(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Static subtitle', monkeypatch, now)
+
+    cleared = []
+    p.subtitle_cleared.connect(lambda: cleared.append(1))
+
+    send('Static subtitle', pixel_val=50)
+    p._on_translation('Sabit altyazi', req_gen=p._subtitle_generation)
+    assert p.subtitle_visible
+
+    # 2 seconds with identical frames (diff < FRAME_DIFF_THRESHOLD)
+    for _ in range(10):
+        now[0] += 0.2
+        send(pixel_val=50)
+
+    assert cleared == []
+    assert p.subtitle_visible
+
+
+def test_static_empty_screen_clears_after_timeout(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Line will vanish', monkeypatch, now)
+
+    cleared = []
+    p.subtitle_cleared.connect(lambda: cleared.append(1))
+
+    send('Line will vanish', pixel_val=50)
+    p._on_translation('Satir kaybolacak', req_gen=p._subtitle_generation)
+    assert p.subtitle_visible
+
+    # First blank frame sets _last_ocr_had_text = False
+    now[0] += 0.1
+    send('', pixel_val=60)
+    assert cleared == []
+
+    # Subsequent frames are static empty (frame-diff path with pixel_val=60)
+    now[0] += 0.4
+    send('', pixel_val=60)
+    assert cleared == [1]
+    assert not p.subtitle_visible
+
+
+def test_garbage_and_own_translation_not_counted_as_text(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Real dialog', monkeypatch, now)
+
+    cleared = []
+    p.subtitle_cleared.connect(lambda: cleared.append(1))
+
+    send('Real dialog', pixel_val=50)
+    p._on_translation('Gercek diyalog', req_gen=p._subtitle_generation)
+    assert p.subtitle_visible
+
+    # Send garbage / UI noise / own translation
+    now[0] += 0.1
+    send('12:45', pixel_val=60)  # UI noise / garbage
+    assert not p._last_ocr_had_text
+
+    now[0] += 0.2
+    send('Gercek diyalog', pixel_val=70)  # own translation
+    assert not p._last_ocr_had_text
+
+    # Wait out 400ms from the last real text
+    now[0] += 0.3
+    send('12:45', pixel_val=80)
+    assert cleared == [1]
+    assert not p.subtitle_visible
+
+
+def test_translation_arrives_after_text_gone(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Vanishing fast', monkeypatch, now)
+
+    translations = []
+    p.translation_ready.connect(lambda txt: translations.append(txt))
+
+    # Capture text and trigger dispatch
+    send('Vanishing fast', pixel_val=50)
+    req_gen = p._subtitle_generation
+
+    # Text disappears and clears before translation returns
+    now[0] += 0.1
+    send('', pixel_val=60)
+    now[0] += 0.8
+    send('', pixel_val=70)
+    assert not p.subtitle_visible
+
+    # Translation finally returns with old req_gen
+    p._on_translation('Hizli kaybolan', req_gen=req_gen)
+    assert not p.subtitle_visible
+    assert translations == ['Hizli kaybolan']
+
+
+def test_dialogue_retranslated_after_cleared(qapp, monkeypatch):
+    from lingolay.core.pipeline import Pipeline
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Hello again.', monkeypatch, now)
+
+    dispatched = []
+    monkeypatch.setattr(p, '_extract_new_sentences', lambda txt: txt)
+    if p._translation_worker is None:
+        class DummyWorker:
+            translator = None
+            def request_translation(self, txt, gen):
+                dispatched.append((txt, gen))
+        p._translation_worker = DummyWorker()
+
+    now[0] += 0.3
+    send('Hello again.', pixel_val=50)
+    now[0] += 0.3
+    send('Hello again.', pixel_val=51)
+    p._on_translation('Tekrar merhaba.', req_gen=p._subtitle_generation)
+    assert len(dispatched) == 1
+
+    # Text disappears and clears
+    now[0] += 0.1
+    send('', pixel_val=60)
+    now[0] += 0.8
+    send('', pixel_val=70)
+    assert not p.subtitle_visible
+
+    # Same dialogue reappears later
+    now[0] += 1.0
+    now[0] += 0.3
+    send('Hello again.', pixel_val=80)
+    now[0] += 0.3
+    send('Hello again.', pixel_val=81)
+    assert len(dispatched) == 2
+
+
+def test_subtitle_clear_disabled_emits_no_signal(qapp, monkeypatch):
+    from lingolay.core.config import get_settings
+    from lingolay.core.pipeline import Pipeline
+    monkeypatch.setattr(get_settings(), 'subtitle_clear_enabled', False)
+
+    now = [1000.0]
+    p = Pipeline(qapp)
+    send = _setup_pipeline_for_test(p, 'Never clear', monkeypatch, now)
+
+    cleared = []
+    p.subtitle_cleared.connect(lambda: cleared.append(1))
+
+    send('Never clear', pixel_val=50)
+    p._on_translation('Asla silme', req_gen=p._subtitle_generation)
+    assert p.subtitle_visible
+
+    now[0] += 0.1
+    send('', pixel_val=60)
+    now[0] += 2.0
+    send('', pixel_val=70)
+
+    assert cleared == []
+    assert p.subtitle_visible
+
+
+def test_overlay_speaker_font_scaled_and_hidden_when_none(qtbot):
+    from lingolay.core.config import get_settings
+    from lingolay.overlay.window import OverlayWindow
+    from lingolay.text.cleaning import subtitle_lines
+
+    # Test subtitle_lines does not split ellipsis
+    text_ellipsis = 'Wait... do not go.'
+    assert subtitle_lines(text_ellipsis) == 'Wait... do not go.'
+
+    # Test 3 sentences become 3 lines with single font
+    three_sentences = 'First sentence. Second sentence! Third sentence?'
+    lines = subtitle_lines(three_sentences)
+    assert lines == 'First sentence.\nSecond sentence!\nThird sentence?'
+
+    window = OverlayWindow()
+    get_settings().overlay.font_size = 20
+    window._base_font_size = 20
+    qtbot.addWidget(window)
+
+    # With speaker: speaker font size is max(11, int(scaled * 0.7))
+    window.set_translation('Hello world.', speaker='Alice')
+    scaled = window._get_scaled_font_size(len('Hello world.'))
+    expected_speaker_pt = max(11, int(scaled * 0.7))
+    assert not window._speaker_label.isHidden()
+    assert window._speaker_label.text() == 'Alice'
+    assert f'font-size: {expected_speaker_pt}px' in window._speaker_label.styleSheet()
+
+    # Without speaker: speaker label is hidden
+    window.set_translation('Hello world.', speaker=None)
+    assert window._speaker_label.isHidden()
+
+    # Clear: clears speaker and text
+    window.set_translation('Something', speaker='Bob')
+    assert not window._speaker_label.isHidden()
+    window.clear()
+    assert window._current_text == ''
+    assert window._current_speaker is None
+    assert window._speaker_label.isHidden()
