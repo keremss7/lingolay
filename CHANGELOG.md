@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.2] — 2026-11-02
+
+### Fixed
+- The subtitle overlay stays where you put it: placed near a screen edge, a long line no longer moves it away for good ([#30](https://github.com/keremss7/lingolay/pull/30)).
+
 ## [2.5.1] — 2026-10-27
 
 ### Added
