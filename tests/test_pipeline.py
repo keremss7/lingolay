@@ -123,3 +123,22 @@ def test_black_capture_warns_once(qapp, monkeypatch):
     now[0] += 30
     p._check_black(black)
     assert warned == [1]  # once per run
+
+
+def test_overlay_returns_to_its_place_after_a_long_line_near_the_edge(qapp):
+    from lingolay.overlay.window import OverlayWindow
+    o = OverlayWindow()
+    o.set_translation('Short line')
+    o.move(o._get_screen_geometry().x() + 10, o.y())  # the user dragged it close to the left edge
+    o._remember_anchor()
+
+    def center():
+        g = o.geometry()
+        return g.x() + g.width() // 2, g.y() + g.height()
+    home = center()
+    o.set_translation('A very long subtitle line that is much wider than the space left of the anchor ' * 2)
+    assert o.x() >= o._get_screen_geometry().x()  # pushed inside the screen
+    for _ in range(3):
+        o.clear()
+        o.set_translation('Short again')
+        assert center() == home  # and back where the user put it, without drifting

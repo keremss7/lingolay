@@ -121,6 +121,7 @@ class OverlayWindow(QWidget):
         self._current_text = ''
         self._drag_position = QPoint()
         self._is_dragging = False
+        self._anchor = None  # bottom-center the user chose; kept even when a long line is clamped to the screen
         self._base_font_size = 18
         self._setup_window()
         self._setup_ui()
@@ -324,9 +325,9 @@ class OverlayWindow(QWidget):
         final_w = min(max(text_w + chrome_w, 200), max_w)
         final_h = text_h + chrome_h + mode_h
         # Keep the bottom-center anchored while resizing
-        old = self.geometry()
-        old_bottom = old.y() + old.height()
-        old_cx = old.x() + old.width() // 2
+        if self._anchor is None:
+            self._remember_anchor()
+        old_cx, old_bottom = self._anchor
         # QWidget ignores stylesheet padding, so apply it as layout margins instead
         self._container.layout().setContentsMargins(pad, pad, pad, pad)
         self._text_label.setFixedWidth(final_w - pad * 2)
@@ -335,6 +336,10 @@ class OverlayWindow(QWidget):
         self.move(old_cx - final_w // 2, old_bottom - final_h)
         self._clamp_to_screen()
 
+    def _remember_anchor(self):
+        g = self.geometry()
+        self._anchor = (g.x() + g.width() // 2, g.y() + g.height())
+
     def _restore_or_snap_position(self):
         ov = get_settings().overlay
         if ov.pos_x is not None and ov.pos_y is not None:
@@ -342,6 +347,7 @@ class OverlayWindow(QWidget):
             self._clamp_to_screen()
         else:
             self._snap_to_bottom_center()
+        self._remember_anchor()
 
     def _snap_to_bottom_center(self):
         geo = self._get_screen_geometry()
@@ -390,6 +396,7 @@ class OverlayWindow(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = False
+            self._remember_anchor()
             self.save_position()
             pos = self.pos()
             self.position_changed.emit(pos.x(), pos.y())
