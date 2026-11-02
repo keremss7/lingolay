@@ -55,7 +55,7 @@ class NLLBTranslator:
     MAX_RETRIES = 2
     LENGTH_PENALTY = 1.2
 
-    def __init__(self, from_lang='en', to_lang='tr', model_dir=None, use_gpu=True, beam_size=2, cache_size=500, post_process=True):
+    def __init__(self, from_lang='en', to_lang='tr', model_dir=None, use_gpu=True, beam_size=1, cache_size=500, post_process=True):
         self._from_lang = from_lang
         self._to_lang = to_lang
         self._beam_size = beam_size

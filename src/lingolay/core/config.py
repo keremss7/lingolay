@@ -76,7 +76,9 @@ class Settings:
     min_text_length: int = 2
     text_expiry_sec: int = 4
     cooldown_ms: int = 0
-    subtitle_settle_ms: int = 280
+    subtitle_settle_ms: int = 180
+    subtitle_clear_enabled: bool = True
+    subtitle_clear_ms: int = 400
     cache_size: int = 500
     capture_interval_ms: int = 200
     min_interval_ms: int = 150
