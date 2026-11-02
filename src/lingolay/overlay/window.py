@@ -127,6 +127,7 @@ class OverlayWindow(QWidget):
         self._current_text = ''
         self._current_speaker = None
         self._is_dragging = False
+        self._capa = None
         self._base_font_size = 18
         self._setup_window()
         self._setup_ui()
@@ -345,6 +346,8 @@ class OverlayWindow(QWidget):
             if hasattr(self, '_speaker_label'):
                 self._speaker_label.hide()
             self._apply_style()
+            if self.height() > 1:
+                self._capa = (self.x() + self.width() // 2, self.y() + self.height())
             self._container.setFixedSize(1, 1)
             self.setFixedSize(1, 1)
             return
@@ -383,8 +386,11 @@ class OverlayWindow(QWidget):
         final_h = text_h + speaker_h + chrome_h + mode_h
         # Keep the bottom-center anchored while resizing
         old = self.geometry()
+        collapsed = old.height() <= 1
         old_bottom = old.y() + old.height()
         old_cx = old.x() + old.width() // 2
+        if collapsed and self._capa is not None:
+            old_cx, old_bottom = self._capa
         # QWidget ignores stylesheet padding, so apply it as layout margins instead
         self._container.layout().setContentsMargins(pad, pad, pad, pad)
         self._text_label.setFixedWidth(final_w - pad * 2)
@@ -392,13 +398,18 @@ class OverlayWindow(QWidget):
             self._speaker_label.setFixedWidth(final_w - pad * 2)
         self._container.setFixedSize(final_w, final_h)
         self.setFixedSize(final_w, final_h)
-        new_x = old_cx - final_w // 2
-        new_y = old_bottom - final_h
+        if collapsed and self._capa is None:
+            new_x, new_y = old.x(), old.y()
+        else:
+            new_x = old_cx - final_w // 2
+            new_y = old_bottom - final_h
         self.move(new_x, new_y)
         self._clamp_to_screen()
+        self._capa = (self.x() + self.width() // 2, self.y() + self.height())
 
     def _restore_or_snap_position(self):
         ov = get_settings().overlay
+        self._capa = None
         if ov.pos_x is not None and ov.pos_y is not None:
             self.move(ov.pos_x, ov.pos_y)
             self._clamp_to_screen()
@@ -409,6 +420,7 @@ class OverlayWindow(QWidget):
         geo = self._get_screen_geometry()
         if not geo:
             return
+        self._capa = None
         self.move(geo.center().x() - self.width() // 2, geo.bottom() - self.height() - 60)
 
     def _clamp_to_screen(self):
@@ -453,6 +465,8 @@ class OverlayWindow(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = False
+            if self.height() > 1:
+                self._capa = (self.x() + self.width() // 2, self.y() + self.height())
             self.save_position()
             pos = self.pos()
             self.position_changed.emit(pos.x(), pos.y())

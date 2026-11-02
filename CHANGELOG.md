@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.3-afu] — 2026-11-02
+
+### Fixed
+- The subtitle overlay no longer drifts up and left a little with every new subtitle. The bottom-center anchor is kept while the overlay is cleared, dragged, or restored from a saved position.
+
 ## [2.5.2-afu] — 2026-11-02
 
 ### Added
