@@ -140,5 +140,5 @@ def test_overlay_returns_to_its_place_after_a_long_line_near_the_edge(qapp):
     assert o.x() >= o._get_screen_geometry().x()  # pushed inside the screen
     for _ in range(3):
         o.clear()
-        o.set_translation('Short again')
+        o.set_translation('Short line')  # same width as before: only the position may differ
         assert center() == home  # and back where the user put it, without drifting
