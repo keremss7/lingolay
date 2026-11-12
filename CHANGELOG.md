@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.3] — 2026-11-12
+
+### Added
+- **Persian (فارسی)** as an on-screen and target language, with a dubbing voice ([#31](https://github.com/keremss7/lingolay/issues/31), [#32](https://github.com/keremss7/lingolay/pull/32)).
+
 ## [2.5.2] — 2026-11-02
 
 ### Fixed
