@@ -128,3 +128,8 @@ def test_unknown_speaker_or_matching_off_uses_the_default_voice():
     eng.set_speaker_matching(None, None)
     eng.speak('Hello there.')
     assert eng._queue.get_nowait()[0] == '__SYNTH__'  # the original code path
+
+
+def test_persian_output_uses_persian_letters():
+    from lingolay.translation.nllb import _post_process_persian
+    assert _post_process_persian('كليد برج قديمي كجاست؟') == 'کلید برج قدیمی کجاست؟'

@@ -20,7 +20,7 @@ Lingolay ekrandaki altyazıyı okur, Meta'nın NLLB‑200 yapay zekâ modeliyle 
 ## ✨ Öne çıkanlar
 
 - 🔒 **%100 çevrimdışı ve gizli** — hesap, API anahtarı veya veri toplama yok. Çeviri tamamen senin bilgisayarında yapılır.
-- 🌍 **21 dil, her yöne** — İngilizce, Japonca, Çince, Korece, Rusça, Almanca, Fransızca, İspanyolca, Portekizce, İtalyanca, Felemenkçe, Lehçe, Ukraynaca, Arapça, Türkçe, Hintçe, Urduca, Bengalce, Vietnamca, Endonezce, Tayca. Ekrandaki dil → hedef dil serbest.
+- 🌍 **22 dil, her yöne** — İngilizce, Japonca, Çince, Korece, Rusça, Almanca, Fransızca, İspanyolca, Portekizce, İtalyanca, Felemenkçe, Lehçe, Ukraynaca, Arapça, Türkçe, Hintçe, Urduca, Farsça, Bengalce, Vietnamca, Endonezce, Tayca. Ekrandaki dil → hedef dil serbest.
 - 🎮 **Oyunlar için tasarlandı** — oyun modu (otomatik borderless), tıklamayı geçiren ve her zaman üstte kalan overlay, oyun içinde çalışan kısayollar.
 - 🗣️ **Yapay zekâ dublaj** — çeviriler Piper sesleriyle (yine çevrimdışı) seslendirilir, bu sırada oyunun sesi otomatik kısılır. Tayca dışındaki tüm hedef dillerde kullanılabilir.
 - 🎭 **Konuşmacıya duyarlı dublaj** *(yeni, deneysel)* — Lingolay oyunu ya da videoyu dinler, konuşanın **kadın mı erkek mi** olduğunu anlar ve her repliği **uygun sesle** seslendirir. 20 dilde, tamamen çevrimdışı; Lingolay'in kendi sesi hiç duyulmaz. *Dublaj → Konuşanın sesine uydur* ile açılır (Windows 10 2004+).
