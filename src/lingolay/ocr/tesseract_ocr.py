@@ -23,7 +23,7 @@ except Exception:
 _LANG_MAP = {
     'en': 'eng', 'tr': 'tur', 'de': 'deu', 'fr': 'fra', 'es': 'spa', 'ru': 'rus',
     'ar': 'ara', 'zh': 'chi_sim', 'ja': 'jpn', 'ko': 'kor', 'pt': 'por', 'it': 'ita',
-    'nl': 'nld', 'pl': 'pol', 'uk': 'ukr', 'hi': 'hin', 'ur': 'urd', 'bn': 'ben', 'vi': 'vie',
+    'nl': 'nld', 'pl': 'pol', 'uk': 'ukr', 'hi': 'hin', 'ur': 'urd', 'fa': 'fas', 'bn': 'ben', 'vi': 'vie',
     'id': 'ind', 'th': 'tha',
 }
 

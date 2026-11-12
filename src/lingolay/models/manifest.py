@@ -110,6 +110,7 @@ VOICE_TABLE = {
     'uk': ('uk_UA-ukrainian_tts-medium', (RemoteFile('uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx', 76735663, '7920419ac5f6fd8b6450520f24b52ed5a319cb53dd018fbcd71c9e079cbac84f'), RemoteFile('uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx.json', 2002))),
     'hi': ('hi_IN-pratham-medium', (RemoteFile('hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx', 63516050, '169964b0871667f6793416d4b35e97357a68ba1ad01df8580c28048989ee7693'), RemoteFile('hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx.json', 4970))),
     'ur': ('ur_PK-fasih-medium', (RemoteFile('ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx', 63532015, '46d590b90fbb41e4d4f2c54ded44874917f8b11b6e0500de2a89e5d3731b5917'), RemoteFile('ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx.json', 3146))),
+    'fa': ('fa_IR-amir-medium', (RemoteFile('fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx', 63531379, 'fb815380d969ea372b0b21b0de14421f58fe481047e153e69685d079b6e1a9d1'), RemoteFile('fa/fa_IR/amir/medium/fa_IR-amir-medium.onnx.json', 4958))),
     'bn': ('bn_BD-google-medium', (RemoteFile('bn/bn_BD/google/medium/bn_BD-google-medium.onnx', 76782515, 'f2e7518ed5534a755024a48c71b80bf617efaf12570bbdf3ce255a9526a8afd3'), RemoteFile('bn/bn_BD/google/medium/bn_BD-google-medium.onnx.json', 5494))),
     'vi': ('vi_VN-vais1000-medium', (RemoteFile('vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx', 63201294, 'ec7c89e2c85f4d1edc24b6120c18aaf1bda614f06b511567eb9c7c0de15e2dab'), RemoteFile('vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx.json', 4860))),
     'id': ('id_ID-news_tts-medium', (RemoteFile('id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx', 62950044, 'ed8f02aa593f7af6b19acbdb8142e0da0dd72f46194eb33d38e0eb10a52597e8'), RemoteFile('id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx.json', 5050))),
@@ -140,7 +141,7 @@ VOICE_GENDERS = {
     'ar_JO-kareem-medium': 'male', 'zh_CN-huayan-medium': 'female', 'ja_JP-hi_fi_captain-medium': 'female',
     'ko_KR-kss-medium': 'female', 'hi_IN-pratham-medium': 'male', 'hi_IN-priyamvada-medium': 'female',
     'hi_IN-rohan-medium': 'male', 'ur_PK-fasih-medium': 'male', 'ur_PK-aegis_female-medium': 'female',
-    'bn_BD-google-medium': 'male', 'vi_VN-vais1000-medium': 'female', 'id_ID-news_tts-medium': 'female',
+    'fa_IR-amir-medium': 'male',    'bn_BD-google-medium': 'male', 'vi_VN-vais1000-medium': 'female', 'id_ID-news_tts-medium': 'female',
 }
 
 
@@ -171,6 +172,7 @@ GENDER_VOICES = {
     'ko': {_F: GenderVoice('ko_KR-kss-medium'), _M: GenderVoice('ko_KR-kss-medium', transform=_M)},
     'hi': {_M: GenderVoice('hi_IN-pratham-medium'), _F: GenderVoice('hi_IN-priyamvada-medium')},
     'ur': {_M: GenderVoice('ur_PK-fasih-medium'), _F: GenderVoice('ur_PK-aegis_female-medium')},
+    'fa': {_M: GenderVoice('fa_IR-amir-medium'), _F: GenderVoice('fa_IR-amir-medium', transform=_F)},
     'bn': {_M: GenderVoice('bn_BD-google-medium', speaker=0), _F: GenderVoice('bn_BD-google-medium', speaker=12)},
     'vi': {_F: GenderVoice('vi_VN-vais1000-medium'), _M: GenderVoice('vi_VN-vais1000-medium', transform=_M)},
     'id': {_F: GenderVoice('id_ID-news_tts-medium'), _M: GenderVoice('id_ID-news_tts-medium', transform=_M)},

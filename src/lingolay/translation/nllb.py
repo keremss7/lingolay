@@ -50,6 +50,17 @@ def _post_process_turkish(text):
     return text.strip()
 
 
+_PERSIAN_LETTERS = str.maketrans({'ي': 'ی', 'ى': 'ی', 'ك': 'ک'})
+
+
+def _post_process_persian(text):
+    """NLLB mixes in the Arabic forms of yeh and kaf; Persian text uses its own letters."""
+    return text.translate(_PERSIAN_LETTERS)
+
+
+_POST_PROCESS = {'tr': _post_process_turkish, 'fa': _post_process_persian}
+
+
 class NLLBTranslator:
     MAX_TEXT_LENGTH = 600  # sentences are translated one by one; this only guards against runaway OCR text
     MAX_RETRIES = 2
@@ -60,7 +71,7 @@ class NLLBTranslator:
         self._to_lang = to_lang
         self._beam_size = beam_size
         self._use_gpu = use_gpu
-        self._post_process = post_process and to_lang == 'tr'
+        self._post_process = _POST_PROCESS.get(to_lang) if post_process else None
         if model_dir:
             self._model_dir = Path(model_dir)
         else:
@@ -281,7 +292,7 @@ class NLLBTranslator:
             for i in todo:
                 translated = sep.join(joined[i])
                 if self._post_process:
-                    translated = _post_process_turkish(translated)
+                    translated = self._post_process(translated)
                 if translated:
                     self._cache.put(prepared[i], translated)
                 results[i] = translated
@@ -322,7 +333,7 @@ class NLLBTranslator:
         if error:
             return TranslationResult(text='', latency_ms=elapsed_ms, error=error)
         if self._post_process:
-            translated = _post_process_turkish(translated)
+            translated = self._post_process(translated)
         self._cache.put(text, translated)
         return TranslationResult(text=translated, latency_ms=elapsed_ms)
 

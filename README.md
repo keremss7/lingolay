@@ -33,7 +33,7 @@ shows the translation in a floating overlay — and can even **dub it out loud**
 | | |
 |---|---|
 | 🔒 **100 % offline & private** | Translation runs locally with [NLLB‑200](https://ai.meta.com/research/no-language-left-behind/) via CTranslate2. No account, no API key, no telemetry — nothing leaves your PC. |
-| 🌍 **21 languages, any direction** | English, Japanese, Chinese, Korean, Russian, German, French, Spanish, Portuguese, Italian, Dutch, Polish, Ukrainian, Arabic, Turkish, **Hindi, Urdu, Bengali, Vietnamese, Indonesian, Thai**. Pick *on‑screen* → *target* freely. |
+| 🌍 **22 languages, any direction** | English, Japanese, Chinese, Korean, Russian, German, French, Spanish, Portuguese, Italian, Dutch, Polish, Ukrainian, Arabic, Turkish, Hindi, Urdu, **Persian**, Bengali, Vietnamese, Indonesian, Thai. Pick *on‑screen* → *target* freely. |
 | 🎮 **Built for games** | Game mode (auto‑borderless), click‑through always‑on‑top overlay, global hotkeys that work in‑game, white‑text subtitle isolation. |
 | 🗣️ **Neural voice dubbing** | Hear translations read aloud with [Piper](https://github.com/rhasspy/piper) voices — also offline — while other apps are automatically ducked. Available for every target language except Thai (for now). |
 | 🎭 **Speaker‑aware dubbing** *(new, experimental)* | Lingolay listens to the game or video, hears whether a **man or a woman** is speaking and dubs each line with a **matching voice**, in all 20 dubbed languages. Fully offline, and Lingolay's own voice is never picked up. Turn it on under *Voice dubbing → Match the speaker's voice* (Windows 10 2004+). |
