@@ -177,3 +177,33 @@ def test_hotkey_flow_shows_and_hides_the_translation(qapp, qtbot, monkeypatch):
     assert failed.args == ['black']  # exclusive fullscreen: a hint instead of an empty overlay
     qtbot.waitUntil(lambda: st_black.active, timeout=2000)
     st_black.hide()
+
+
+def test_translate_screen_works_in_the_real_window_with_translation_stopped(qapp, qtbot, monkeypatch):
+    """Regression for #33: the window passed a translator attribute the pipeline didn't have."""
+    import lingolay.translation as translation
+    from lingolay.ui.main_window import MainWindow
+
+    class FakeTranslator:
+        is_ready, init_error = True, None
+
+        def translate_many(self, texts):
+            return ['Ayarlar' for _ in texts]
+
+    loads = []
+    monkeypatch.setattr(translation, 'create_translator', lambda s: loads.append(1) or FakeTranslator())
+    win = MainWindow()
+    assert win._pipeline.translator is None  # translation not running
+    st = win._screen_translator
+    frame = _scene()
+    monkeypatch.setattr(type(st), '_capture', staticmethod(lambda screen: (frame, 1.0)))
+    monkeypatch.setattr(st, '_ocr_engine', lambda: type('O', (), {'recognize_layout': lambda self, i: [OcrLine('Settings', 100, 340, 120, 30)]})())
+    with qtbot.waitSignal(st.finished, timeout=10000) as done:
+        st.toggle()  # loads an engine in the background, then translates by itself
+    assert [i.translation for i in done.args[0]] == ['Ayarlar']
+    st.toggle()
+    with qtbot.waitSignal(st.finished, timeout=10000):
+        st.toggle()  # the engine is kept: no second load
+    assert loads == [1]
+    st.hide()
+    win.close()

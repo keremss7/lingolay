@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, Signal
@@ -371,13 +372,17 @@ class MainWindow(QMainWindow):
     _sig_hk_game_mode = Signal()
     _sig_hk_toggle_tts = Signal()
     _sig_hk_translate_screen = Signal()
+    _sig_screen_engine_loaded = Signal(str)  # '' when loaded, else the error
 
     def __init__(self):
         super().__init__()
         self._region_selector = RegionSelector()
         self._overlay = OverlayWindow()
         from lingolay.screen_translate.controller import ScreenTranslator
-        self._screen_translator = ScreenTranslator(lambda: self._pipeline.translator,
+        # Translate screen uses the running translation's engine, or loads its own when translation is off
+        self._screen_engine, self._screen_engine_key, self._screen_engine_loading = None, None, False
+        self._sig_screen_engine_loaded.connect(self._on_screen_engine_loaded)
+        self._screen_translator = ScreenTranslator(self._screen_translate_engine,
                                                    lambda: get_settings().ocr_language, self._own_window_rects, self)
         self._screen_translator.finished.connect(self._on_screen_translated)
         self._screen_translator.failed.connect(self._on_screen_translate_failed)
@@ -1340,8 +1345,46 @@ class MainWindow(QMainWindow):
         self._overlay.set_error(message)
         self._sb.showMessage(message, 15000)
 
+    def _screen_translate_engine(self):
+        """Translation engine for Translate screen; starts loading one in the background if none is ready."""
+        running = self._pipeline.translator
+        if running is not None:
+            self._screen_engine, self._screen_engine_key = None, None  # don't keep a second model in memory
+            return running
+        s = get_settings()
+        key = (s.translation_engine, s.source_lang, s.target_lang)
+        if self._screen_engine is not None and self._screen_engine_key == key:
+            return self._screen_engine
+        if not self._screen_engine_loading:
+            self._screen_engine_loading = True
+            self._screen_engine = None
+            threading.Thread(target=self._load_screen_engine, args=(key,), daemon=True, name='ScreenEngine').start()
+        return None
+
+    def _load_screen_engine(self, key):
+        from lingolay.translation import create_translator
+        try:
+            engine = create_translator(get_settings())
+            if not engine.is_ready:
+                raise RuntimeError(engine.init_error or t('The model could not be loaded'))
+            self._screen_engine, self._screen_engine_key = engine, key
+            error = ''
+        except Exception as e:
+            logger.exception('[ScreenTranslate] Translator load error')
+            error = str(e) or type(e).__name__
+        self._sig_screen_engine_loaded.emit(error)
+
+    def _on_screen_engine_loaded(self, error):
+        self._screen_engine_loading = False
+        if error:
+            self._sb.showMessage(t('Translation error: {error}', error=error), 8000)
+        elif not self._screen_translator.active:
+            self._screen_translator.toggle()  # the press that started the loading
+
     def _on_screen_translate_failed(self, error):
-        if error == 'black':
+        if error == 'translator' and self._screen_engine_loading:
+            self._sb.showMessage(t('Loading the translation model… the screen is translated as soon as it is ready'), 8000)
+        elif error == 'black':
             self._sb.showMessage(t('The game screen looks black. Switch the game to Borderless or Windowed mode.'), 10000)
         elif error == 'translator':
             self._sb.showMessage(t('The translator is not ready yet, please wait'), 5000)
