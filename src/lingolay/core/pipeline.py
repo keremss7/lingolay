@@ -213,6 +213,13 @@ class Pipeline(QObject):
         self._emit_status()
 
     @property
+    def translator(self):
+        """The loaded translation engine while translation is running, else None."""
+        worker = self._translation_worker
+        translator = worker.translator if worker else None
+        return translator if translator is not None and getattr(translator, 'is_ready', False) else None
+
+    @property
     def current_region(self):
         """Returns (x, y, w, h) of the currently set region, or None."""
         return self._last_region

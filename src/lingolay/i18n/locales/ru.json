@@ -268,5 +268,6 @@
   "Screen translated: {count} texts": "Экран переведён: {count} фрагм.",
   "No text to translate was found on the screen.": "На экране не найден текст для перевода.",
   "Translating…": "Перевожу…",
-  "The game screen looks black. Switch the game to Borderless or Windowed mode.": "Экран игры выглядит чёрным. Переключите игру в режим «Без рамки» или «В окне»."
+  "The game screen looks black. Switch the game to Borderless or Windowed mode.": "Экран игры выглядит чёрным. Переключите игру в режим «Без рамки» или «В окне».",
+  "Loading the translation model… the screen is translated as soon as it is ready": "Загружается модель перевода… экран будет переведён, как только она будет готова"
 }
