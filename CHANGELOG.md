@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.4] — 2026-11-23
+
+### Fixed
+- **Translate screen** works again: it failed with *"'Pipeline' object has no attribute 'translator'"* and translated nothing ([#33](https://github.com/keremss7/lingolay/issues/33)). It also works now when subtitle translation is not running: the first press loads the translation model and translates as soon as it is ready ([#34](https://github.com/keremss7/lingolay/pull/34)).
+
 ## [2.5.3] — 2026-11-12
 
 ### Added
