@@ -113,12 +113,26 @@ def _pitch_shift_wav(wav_bytes: bytes, semitones: float) -> bytes:
         return wav_bytes
 
 
+_LETTER_VOICE_APOSTROPHES = str.maketrans({'\u2019': "'", '\u02bc': "'", '`': "'"})
+
+
+def text_for_letter_voice(text: str) -> str:
+    """Voices that read letters, not phonemes, only know lower-case letters and a plain apostrophe."""
+    return text.lower().translate(_LETTER_VOICE_APOSTROPHES)
+
+
+def _reads_letters(config) -> bool:
+    phoneme_type = getattr(config, 'phoneme_type', None)
+    return str(getattr(phoneme_type, 'value', phoneme_type)).lower() == 'text'
+
+
 class PiperEngine:
     def __init__(self, voice_key: str = DEFAULT_VOICE):
         self._voice_key = voice_key
         self._voice = None
         self._sample_rate = 22050
         self._num_speakers = 1
+        self._reads_letters = False
         self._init_error = None
         self._try_load()
 
@@ -171,6 +185,8 @@ class PiperEngine:
             )
             self._sample_rate = self._voice.config.sample_rate
             self._num_speakers = int(getattr(self._voice.config, 'num_speakers', 1) or 1)
+            # e.g. uk_UA-ukrainian_tts reads letters; an upper-case letter would be skipped silently
+            self._reads_letters = _reads_letters(self._voice.config)
             logger.info('[Piper] Model loaded: %s (%sHz, %s speakers)', self._voice_key, self._sample_rate, self._num_speakers)
         except Exception as e:
             self._init_error = str(e)
@@ -189,6 +205,8 @@ class PiperEngine:
         text = text.strip()
         if not text:
             return (None, 'Empty text')
+        if self._reads_letters:
+            text = text_for_letter_voice(text)
         if self._num_speakers > 1 and speaker_id is None:
             speaker_id = 0
         if speaker_id is not None:
