@@ -1,7 +1,8 @@
 name: Badges
 
 # shields.io's own GitHub "downloads" badge fails intermittently, so the total is computed here
-# and published as a shields endpoint JSON on the `badges` branch.
+# and the finished badge image is published on the `badges` branch. The README loads the SVG
+# straight from GitHub, so a slow shields.io request can no longer turn it into a broken image.
 on:
   schedule:
     - cron: "17 */6 * * *"
@@ -27,12 +28,15 @@ jobs:
           mkdir -p out
           printf '{"schemaVersion":1,"label":"downloads","message":"%s","color":"30cc74"}\n' "$msg" > out/downloads.json
           cat out/downloads.json
+          curl -fsS --retry 5 --retry-all-errors --max-time 20 -o out/downloads.svg \
+            "https://img.shields.io/badge/downloads-${msg}-30cc74"
+          grep -q '<svg' out/downloads.svg
       - name: Publish to the badges branch
         run: |
           cd out
           git init -q -b badges
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads.json
+          git add downloads.json downloads.svg
           git commit -q -m "Update download badge"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" badges
