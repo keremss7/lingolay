@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.5.6] — 2026-11-27
 
 ### Added
 - **Spanish (Español) interface**, contributed by [@Dathinel](https://github.com/Dathinel) ([#35](https://github.com/keremss7/lingolay/pull/35)).
