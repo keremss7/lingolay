@@ -133,3 +133,36 @@ def test_unknown_speaker_or_matching_off_uses_the_default_voice():
 def test_persian_output_uses_persian_letters():
     from lingolay.translation.nllb import _post_process_persian
     assert _post_process_persian('كليد برج قديمي كجاست؟') == 'کلید برج قدیمی کجاست؟'
+
+
+def test_letter_voices_hear_the_first_capital_letter():
+    """uk_UA-ukrainian_tts only knows lower-case letters; 'Люсія' used to be spoken as 'юсія' (#36)."""
+    from types import SimpleNamespace
+
+    from lingolay.tts.piper_engine import PiperEngine
+
+    heard = []
+
+    class _Chunk:
+        audio_int16_bytes, sample_rate, sample_channels = b'\x00\x00' * 10, 22050, 1
+
+    class _Voice:
+        def __init__(self, phoneme_type):
+            self.config = SimpleNamespace(sample_rate=22050, num_speakers=1, phoneme_type=phoneme_type)
+
+        def synthesize(self, text, **kwargs):
+            heard.append(text)
+            yield _Chunk()
+
+    def engine(phoneme_type):
+        from lingolay.tts import piper_engine
+        e = PiperEngine.__new__(PiperEngine)
+        e._voice, e._sample_rate, e._num_speakers, e._init_error = _Voice(phoneme_type), 22050, 1, None
+        e._reads_letters = piper_engine._reads_letters(e._voice.config)
+        return e
+
+    audio, err = engine('text').synthesize('Люсія: Я зрозумію, Ґанок’', rate='+0%')
+    assert audio and err is None
+    assert heard[-1] == "люсія: я зрозумію, ґанок'"
+    engine('espeak').synthesize('Lucia: I get it.', rate='+0%')
+    assert heard[-1] == 'Lucia: I get it.'
