@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.5] — 2026-11-27
+
+### Fixed
+- **Ukrainian dubbing** no longer drops capital letters: the default Ukrainian voice skipped them, so *"Люсія: Я зрозумію"* was spoken as *"юсія: зрозумію"* ([#36](https://github.com/keremss7/lingolay/issues/36), [#38](https://github.com/keremss7/lingolay/pull/38)).
+
 ## [2.5.4] — 2026-11-23
 
 ### Fixed
